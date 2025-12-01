@@ -166,8 +166,10 @@ void Cohete::configurarParaNivel(int nivel) {
         break;
 
     case 3:
-        masaSeca = 2500.0;
-        combustibleMaximo = 6000.0;
+        masaSeca = 15000.0;
+        combustibleMaximo = 8000.0;
+        combustible = combustibleMaximo;
+         calcularMasaActual();
         tripulado = true;
         break;
 

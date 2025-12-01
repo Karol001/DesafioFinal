@@ -35,11 +35,20 @@ bool Nivel3_Apolo11::verificarVictoria(Cohete* cohete) {
 }
 
 void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
+    if (deltaTime <= 0.0) return;
+
     tiempoTranscurrido += deltaTime;
 
-    if (cohete->tieneCombustible() && cohete->obtenerEmpuje() > 0) {
+    if (!enDescenso) {
+        cohete->establecerAltura(alturaInicial);
+        cohete->establecerVelocidad(0.0);
+        enDescenso = true;
+    }
+
+    if (cohete->tieneCombustible() && cohete->obtenerEmpuje() > 0.0) {
         double aceleracion = cohete->obtenerEmpuje() / cohete->obtenerMasa();
-        double nuevaVelocidad = cohete->obtenerVelocidad() + aceleracion * deltaTime;
+        double nuevaVelocidad =
+            cohete->obtenerVelocidad() + aceleracion * deltaTime;
         cohete->establecerVelocidad(nuevaVelocidad);
 
         double consumo = (cohete->obtenerEmpuje() / 9000.0) * deltaTime;
@@ -48,13 +57,13 @@ void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
 
     cohete->aplicarGravedad(gravedadLunar, deltaTime);
 
-
     cohete->actualizarEstado(deltaTime);
 
     if (cohete->obtenerAltura() <= alturaSuperficie) {
         if (std::abs(cohete->obtenerVelocidad()) > velocidadAterrizajeSegura) {
             cohete->marcarDanado();
         }
+
         cohete->establecerAltura(alturaSuperficie);
         cohete->establecerVelocidad(0.0);
     }
@@ -66,16 +75,18 @@ std::string Nivel3_Apolo11::obtenerDescripcion() const {
 }
 
 std::string Nivel3_Apolo11::obtenerObjetivo() const {
-    return "Aterrizar en la Luna con velocidad menor a 5 m/s.";
+    return "Aterrizar en la Luna con velocidad menor o igual a 5 m/s.";
 }
 
 bool Nivel3_Apolo11::verificarAterrizaje(Cohete* cohete) const {
     return (cohete->obtenerAltura() <= alturaSuperficie + 1.0 &&
-            std::abs(cohete->obtenerVelocidad()) <= velocidadAterrizajeSegura);
+            std::abs(cohete->obtenerVelocidad()) <= velocidadAterrizajeSegura &&
+            !cohete->estaDanado());
 }
 
 void Nivel3_Apolo11::iniciarDescenso() {
-    enDescenso = true;
+    enDescenso = false;
+    tiempoTranscurrido = 0.0;
 }
 
 std::string Nivel3_Apolo11::obtenerFaseDescenso(Cohete* cohete) const {
@@ -90,3 +101,4 @@ std::string Nivel3_Apolo11::obtenerFaseDescenso(Cohete* cohete) const {
 double Nivel3_Apolo11::obtenerVelocidadIdeal(double altura) const {
     return -std::sqrt(2.0 * gravedadLunar * altura);
 }
+

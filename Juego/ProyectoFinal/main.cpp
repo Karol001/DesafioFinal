@@ -6,6 +6,7 @@
 #include "Cohete.h"
 #include "Nivel1_Sputnik.h"
 #include "nivel2_vostok.h"
+#include "nivel3_apolo11.h"
 #include "AgenteHAL69.h"
 
 
@@ -27,7 +28,7 @@ void simularNivel(int numeroNivel,
     double tiempo = 0.0;
     bool victoria = false;
     double tiempoControl = 0.0;
-    const double INTERVALO_CONTROL = 10.0; // cada 10 s HAL analiza
+    const double INTERVALO_CONTROL = 10.0;
 
     std::cout << "\n=== Simulando nivel: " << nivel.obtenerNombre() << " ===\n";
     std::cout << nivel.obtenerDescripcion() << "\n";
@@ -42,7 +43,6 @@ void simularNivel(int numeroNivel,
             imprimirEstado(tiempo, cohete);
         }
 
-        // Aquí se consulta al agente HAL-69 (si existe)
         if (hal && tiempoControl >= INTERVALO_CONTROL) {
             hal->analizarEstado(numeroNivel, nivel, cohete, tiempo);
             tiempoControl = 0.0;
@@ -104,13 +104,11 @@ void simularNivel2Interactivo(Nivel2_Vostok& nivel, Cohete& cohete,
             imprimirEstado(tiempo, cohete);
             tiempoActualizacion = 0.0;
 
-            // Ahora las advertencias las hace HAL-69
             if (hal) {
                 hal->analizarEstado(2, nivel, cohete, tiempo);
             }
         }
 
-        // Verificar victoria
         if (nivel.verificarVictoria(&cohete)) {
             std::cout << "\n *** VICTORIA en " << nivel.obtenerNombre()
                 << " a t=" << tiempo << "  ***\n";
@@ -120,7 +118,6 @@ void simularNivel2Interactivo(Nivel2_Vostok& nivel, Cohete& cohete,
             return;
         }
 
-        // Verificar fallo prematuro (sin combustible)
         if (!cohete.tieneCombustible() && cohete.obtenerAltura() < 300000.0) {
             std::cout << "\n FALLO: Sin combustible a "
                       << cohete.obtenerAltura()/1000.0 << " km\n";
@@ -131,7 +128,7 @@ void simularNivel2Interactivo(Nivel2_Vostok& nivel, Cohete& cohete,
     }
 
     if (cohete.estaDanado()) {
-        std::cout << "\n💥 El cohete se DANO (velocidad excesiva)\n";
+        std::cout << "\n El cohete se DANO (velocidad excesiva)\n";
         if (hal && cohete.obtenerVelocidad() > nivel.obtenerVelocidadMaxima()) {
             hal->registrarFalloNivel2PorVelocidadAlta();
         }
@@ -142,12 +139,63 @@ void simularNivel2Interactivo(Nivel2_Vostok& nivel, Cohete& cohete,
     imprimirEstado(tiempo, cohete);
 }
 
+void simularNivel3Interactivo(Nivel3_Apolo11& nivel, Cohete& cohete,
+                              double deltaTime, double tiempoMaximo)
+{
+    double tiempo = 0.0;
+
+    std::cout << "\n=== Simulando nivel: " << nivel.obtenerNombre() << " ===\n";
+    std::cout << nivel.obtenerDescripcion() << "\n";
+    std::cout << "Objetivo: " << nivel.obtenerObjetivo() << "\n\n";
+
+    std::cout << "Inicias a 15 km de altura sobre la superficie lunar.\n";
+    std::cout << "Recuerda: debes tocar la superficie con |v| <= 5 m/s.\n\n";
+
+    nivel.iniciarDescenso();
+
+    while (tiempo < tiempoMaximo && !cohete.estaDanado()) {
+        imprimirEstado(tiempo, cohete);
+        std::cout << "Fase: " << nivel.obtenerFaseDescenso(&cohete) << "\n";
+        std::cout << "Empuje actual: " << cohete.obtenerEmpuje() << " N\n";
+
+        std::cout << "Ingresa nuevo empuje (N) [-1 para mantener]: ";
+        double nuevoEmpuje = 1000;
+
+        if (nuevoEmpuje >= 0.0) {
+            cohete.ajustarEmpuje(nuevoEmpuje);
+        }
+
+
+        nivel.aplicarFisica(&cohete, deltaTime);
+        tiempo += deltaTime;
+
+        if (nivel.verificarVictoria(&cohete)) {
+            std::cout << "\n Alunizaje exitoso en Apolo 11\n";
+            imprimirEstado(tiempo, cohete);
+            return;
+        }
+
+        if (cohete.obtenerAltura() <= 0.0 && cohete.estaDanado()) {
+            break;
+        }
+
+    }
+
+    if (cohete.estaDanado()) {
+        std::cout << "\n Aterrizaje fallido: impactaste la superficie muy rapido.\n";
+    } else {
+        std::cout << "\n Tiempo maximo alcanzado sin aterrizar correctamente.\n";
+    }
+
+    imprimirEstado(tiempo, cohete);
+}
+
+
 
 
 int main() {
 
     AgenteHAL69 hal;
-    //NIVEL 1: SPUTNIK
     Cohete cohete;
     cohete.configurarParaNivel(1);
 
@@ -169,7 +217,6 @@ int main() {
 
     if (n1.verificarVictoria(&cohete)) {
 
-        //NIVEL 2: VOSTOK
         std::cout << "\n\n===== NIVEL 2: Vostok 1961 =====\n";
         std::cout << "Configuracion del cohete:\n";
         std::cout << "- Masa seca: 4000 kg\n";
@@ -195,6 +242,16 @@ int main() {
         simularNivel2Interactivo(n2, cohete2, 0.1, 2000.0, &hal);
 
         if (n2.verificarVictoria(&cohete2)) {
+            std::cout << "\nHas completado exitosamente el Nivel 2\n";
+
+            std::cout << "\n\n===== NIVEL 3: Apolo 11 (Alunizaje) =====\n";
+
+            Cohete cohete3;
+            cohete3.configurarParaNivel(3);
+
+            Nivel3_Apolo11 n3;
+
+            simularNivel3Interactivo(n3, cohete3, 0.5, 2000.0);
         }
     } else {
         std::cout << "No pasaste el Nivel 1. Intenta de nuevo.\n";
