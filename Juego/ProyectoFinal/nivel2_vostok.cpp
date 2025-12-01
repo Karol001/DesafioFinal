@@ -26,7 +26,7 @@ void Nivel2_Vostok::aplicarFisica(Cohete* cohete, double deltaTime) {
         double a = cohete->obtenerEmpuje() / cohete->obtenerMasa();
         cohete->establecerVelocidad(cohete->obtenerVelocidad() + a * deltaTime);
 
-        double consumo = (cohete->obtenerEmpuje() / 12000.0) * deltaTime;
+        double consumo = (cohete->obtenerEmpuje() / 10000.0) * deltaTime;
         cohete->consumirCombustible(consumo);
     }
 
@@ -42,21 +42,18 @@ void Nivel2_Vostok::aplicarFisica(Cohete* cohete, double deltaTime) {
 
     cohete->actualizarEstado(deltaTime);
 
-
-    if (fueraRangoVelocidadSegura(cohete) ||
-        cohete->obtenerVelocidad() > velocidadMaxima)
-    {
+    if (cohete->obtenerVelocidad() > velocidadMaxima) {
         cohete->marcarDanado();
     }
 }
 
 std::string Nivel2_Vostok::obtenerDescripcion() const {
-    return "1961 - Vostok 1: Mantén una velocidad segura mientras asciendes "
-           "hasta la órbita. Controla bien tu combustible.";
+    return "1961 - Vostok 1: Manten una velocidad segura mientras asciendes "
+           "hasta la orbita. Controla bien tu combustible.";
 }
 
 std::string Nivel2_Vostok::obtenerObjetivo() const {
-    return "Alcanzar 300 km manteniendo una velocidad segura.";
+    return "Alcanzar 300 km manteniendo velocidad entre 2000-9000 m/s.";
 }
 
 bool Nivel2_Vostok::fueraRangoVelocidadSegura(Cohete* cohete) const {

@@ -3,7 +3,7 @@
 
 Nivel1_Sputnik::Nivel1_Sputnik()
     : Nivel("Sputnik 1957", 100000.0, 8000.0, 0.0, 9.81, 0.5),
-    alturaOrbita(5000.0), velocidadCritica(8000.0) {
+    alturaOrbita(100000.0), velocidadCritica(8000.0) {
 }
 
 bool Nivel1_Sputnik::verificarVictoria(Cohete* cohete) {
