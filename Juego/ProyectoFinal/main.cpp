@@ -1,32 +1,12 @@
-#include <iostream>
-#include "Juego.h"
+#include "mainwindow.h"
+#include <QApplication>
 
-int main() {
-    Juego juego;
+int main(int argc, char *argv[])
+{
+    QApplication a(argc, argv);
 
-    std::cout << "===== SIMULADOR DE COHETES =====\n";
+    MainWindow w;   // Usar tu ventana con el .ui
+    w.show();
 
-    std::cout << "\nPresiona Enter para iniciar Nivel 1...";
-    std::cin.get();
-
-    juego.simularNivel1Interactivo(4300.0);
-
-    if (juego.haGanado()) {
-        std::cout << "\n\nPresiona Enter para iniciar Nivel 2...";
-        std::cin.get();
-
-        juego.simularNivel2Interactivo(280000.0);
-
-        if (juego.haGanado()) {
-            std::cout << "\n\nPresiona Enter para iniciar Nivel 3...";
-            std::cin.get();
-
-            juego.simularNivel3Interactivo();
-        }
-    }
-
-    std::cout << "\n\n===== FIN DEL JUEGO =====\n";
-    std::cout << "Resumen: " << juego.obtenerResumenEstado() << "\n";
-
-    return 0;
+    return a.exec();
 }

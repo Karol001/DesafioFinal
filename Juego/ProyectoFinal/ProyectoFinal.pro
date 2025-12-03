@@ -18,7 +18,8 @@ SOURCES += \
     nivel1_sputnik.cpp \
     nivel2_vostok.cpp \
     nivel3_apolo11.cpp \
-    sistemafisica.cpp
+    sistemafisica.cpp \
+    visualizacionwidget.cpp
 
 HEADERS += \
     agentehal69.h \
@@ -29,7 +30,8 @@ HEADERS += \
     nivel1_sputnik.h \
     nivel2_vostok.h \
     nivel3_apolo11.h \
-    sistemafisica.h
+    sistemafisica.h \
+    visualizacionwidget.h
 
 FORMS += \
     mainwindow.ui

@@ -6,21 +6,484 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Simulador de Cohetes - Carrera Espacial</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <property name="styleSheet">
+   <string notr="true">QMainWindow {
+    background-color: #1a1a2e;
+}
+
+QPushButton {
+    background-color: #16213e;
+    color: #e94560;
+    border: 2px solid #e94560;
+    border-radius: 5px;
+    padding: 8px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+QPushButton:hover {
+    background-color: #e94560;
+    color: white;
+}
+
+QPushButton:pressed {
+    background-color: #0f3460;
+}
+
+QLabel {
+    color: #eee;
+    font-size: 11px;
+}
+
+QGroupBox {
+    color: #e94560;
+    border: 2px solid #16213e;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px 0 5px;
+}
+
+QSlider::groove:horizontal {
+    background: #16213e;
+    height: 8px;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: #e94560;
+    width: 18px;
+    margin: -5px 0;
+    border-radius: 9px;
+}
+
+QSlider::handle:horizontal:hover {
+    background: #ff6b81;
+}
+
+QProgressBar {
+    border: 2px solid #16213e;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #0f3460;
+    color: white;
+}
+
+QProgressBar::chunk {
+    background-color: #e94560;
+    border-radius: 3px;
+}
+
+QTextEdit {
+    background-color: #0f3460;
+    color: #aaa;
+    border: 2px solid #16213e;
+    border-radius: 5px;
+    font-family: 'Courier New';
+    font-size: 10px;
+}</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <!-- PANEL IZQUIERDO: INFORMACIÓN Y CONTROLES -->
+     <widget class="QWidget" name="panelIzquierdo" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>280</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>280</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QGroupBox" name="groupNivel">
+         <property name="title">
+          <string>🚀 NIVEL</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_2">
+          <item>
+           <widget class="QLabel" name="labelNombreNivel">
+            <property name="text">
+             <string>Selecciona un nivel</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 14px; font-weight: bold; color: #e94560;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelDescripcionNivel">
+            <property name="text">
+             <string>Descripción del nivel</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 10px; color: #aaa;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnNivel1">
+            <property name="text">
+             <string>NIVEL 1: Sputnik 1957</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnNivel2">
+            <property name="text">
+             <string>NIVEL 2: Vostok 1961</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnNivel3">
+            <property name="text">
+             <string>NIVEL 3: Apolo 11 1969</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupControles">
+         <property name="title">
+          <string>⚙️ CONTROLES</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_3">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Empuje del Motor:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="sliderEmpuje">
+            <property name="maximum">
+             <number>500000</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelEmpujeValor">
+            <property name="text">
+             <string>0 N</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 13px; font-weight: bold; color: #e94560;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnIniciar">
+            <property name="text">
+             <string>▶ INICIAR</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 14px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnPausar">
+            <property name="text">
+             <string>⏸ PAUSAR</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnReiniciar">
+            <property name="text">
+             <string>🔄 REINICIAR</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <!-- PANEL CENTRAL: VISUALIZACIÓN -->
+     <widget class="QWidget" name="panelCentral" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QWidget" name="widgetVisualizacion" native="true">
+         <property name="styleSheet">
+          <string notr="true">background-color: #0f0f1e; border: 2px solid #16213e; border-radius: 5px;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupHAL">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>120</height>
+          </size>
+         </property>
+         <property name="title">
+          <string>🤖 HAL-69 ASISTENTE</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QTextEdit" name="textHAL">
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+            <property name="html">
+             <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Courier New'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; color:#e94560;&quot;&gt;HAL-69:&lt;/span&gt;&lt;span style=&quot; color:#aaaaaa;&quot;&gt; Sistemas listos. Esperando inicio de misión...&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
+     <!-- PANEL DERECHO: TELEMETRÍA -->
+     <widget class="QWidget" name="panelDerecho" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>250</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="QGroupBox" name="groupTelemetria">
+         <property name="title">
+          <string>📊 TELEMETRÍA</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Tiempo:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelTiempo">
+            <property name="text">
+             <string>0.0 s</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 16px; font-weight: bold; color: #e94560;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Altura:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelAltura">
+            <property name="text">
+             <string>0.0 km</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 16px; font-weight: bold; color: #e94560;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Velocidad:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelVelocidad">
+            <property name="text">
+             <string>0.0 m/s</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 16px; font-weight: bold; color: #e94560;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Combustible:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QProgressBar" name="progressCombustible">
+            <property name="value">
+             <number>100</number>
+            </property>
+            <property name="textVisible">
+             <bool>true</bool>
+            </property>
+            <property name="format">
+             <string>%p%</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Masa:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelMasa">
+            <property name="text">
+             <string>0 kg</string>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 14px; font-weight: bold; color: #e94560;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_6">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelEstado">
+            <property name="text">
+             <string>⚪ LISTO</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 14px; font-weight: bold; color: #aaa; padding: 10px; background-color: #16213e; border-radius: 5px;</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
-     <height>17</height>
+     <width>1200</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>
