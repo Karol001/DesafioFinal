@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     agentehal69.cpp \
     cohete.cpp \
+    juego.cpp \
     main.cpp \
     mainwindow.cpp \
     nivel.cpp \
@@ -22,6 +23,7 @@ SOURCES += \
 HEADERS += \
     agentehal69.h \
     cohete.h \
+    juego.h \
     mainwindow.h \
     nivel.h \
     nivel1_sputnik.h \

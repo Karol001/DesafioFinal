@@ -15,7 +15,7 @@ void Cohete::actualizarEstado(double deltaTime) {
     altura += velocidad * deltaTime;
 
     if (altura <= 0.0) {
-        if (velocidad < -5.0) {
+        if (velocidad < -300.0) {
             danado = true;
         }
 
