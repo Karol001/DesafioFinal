@@ -213,6 +213,42 @@ QTextEdit {
            </widget>
           </item>
           <item>
+           <widget class="QLabel" name="labelVelocidadInicial">
+            <property name="text">
+             <string>Velocidad Inicial (m/s):</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDoubleSpinBox" name="spinVelocidadInicial">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="minimum">
+             <double>0.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10000.000000000000000</double>
+            </property>
+            <property name="singleStep">
+             <double>100.000000000000000</double>
+            </property>
+            <property name="value">
+             <double>0.000000000000000</double>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 12px; font-weight: bold; color: #e94560; background-color: #16213e; border: 2px solid #e94560; border-radius: 5px; padding: 5px;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="btnIniciar">
             <property name="text">
              <string>▶ INICIAR</string>

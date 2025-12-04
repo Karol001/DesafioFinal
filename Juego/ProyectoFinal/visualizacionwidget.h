@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPainter>
 #include <QTimer>
+#include <QPixmap>
 #include "Cohete.h"
 #include "Nivel.h"
 
@@ -41,6 +42,14 @@ private:
     double alturaMaximaVista; // Altura máxima visible en pantalla
     QPointF posicionCohete;   // Posición en píxeles del cohete
 
+    // Sprites
+    QPixmap spriteCohete;  // Sprite sheet completo
+    QPixmap spriteFondo;
+    QVector<QPixmap> framesCohete;  // Frames individuales del sprite sheet
+    bool spritesCargados;
+    int numFramesX;  // Número de frames en X (columnas)
+    int numFramesY;  // Número de frames en Y (filas)
+
     // Métodos de dibujo
     void dibujarFondo(QPainter& painter);
     void dibujarTierra(QPainter& painter);
@@ -59,6 +68,9 @@ private:
     void calcularEscalaAltura();
     QColor obtenerColorPorAltura(double altura) const;
     double alturaAPixel(double altura) const;
+    void cargarSprites();
+    void dividirSpriteSheet();
+    int obtenerFrameSegunEmpuje(double empuje, double empujeMaximo) const;
 
     // Efectos visuales
     void dibujarParticulas(QPainter& painter);

@@ -4,6 +4,9 @@
 #include <QRadialGradient>
 #include <QPaintEvent>
 #include <QRandomGenerator>
+#include <QDir>
+#include <QFileInfo>
+#include <QCoreApplication>
 #include <cmath>
 
 VisualizacionWidget::VisualizacionWidget(QWidget *parent)
@@ -14,7 +17,10 @@ VisualizacionWidget::VisualizacionWidget(QWidget *parent)
     frameAnimacion(0),
     animacionActiva(false),
     escalaAltura(1.0),
-    alturaMaximaVista(150000.0)
+    alturaMaximaVista(150000.0),
+    spritesCargados(false),
+    numFramesX(3),
+    numFramesY(3)
 {
     // Configurar el widget
     setMinimumSize(600, 600);
@@ -27,6 +33,10 @@ VisualizacionWidget::VisualizacionWidget(QWidget *parent)
     for(int i = 0; i < 20; ++i) {
         particulasPropulsion.append(QPointF(0, 0));
     }
+
+    // Cargar sprites
+    cargarSprites();
+    dividirSpriteSheet();
 }
 
 VisualizacionWidget::~VisualizacionWidget()
@@ -37,8 +47,10 @@ VisualizacionWidget::~VisualizacionWidget()
 void VisualizacionWidget::actualizarCohete(const Cohete* cohete)
 {
     coheteActual = cohete;
-    calcularPosicionCohete();
-    update(); // Forzar redibujado
+    if(cohete) {
+        calcularPosicionCohete();
+        update(); // Forzar redibujado
+    }
 }
 
 void VisualizacionWidget::actualizarNivel(const Nivel* nivel, int numNivel)
@@ -122,29 +134,37 @@ void VisualizacionWidget::paintEvent(QPaintEvent *event)
 
 void VisualizacionWidget::dibujarFondo(QPainter& painter)
 {
-    QLinearGradient gradient(0, 0, 0, height());
-
-    if(numeroNivel == 3) {
-        // Fondo espacial para la Luna
-        gradient.setColorAt(0.0, QColor(10, 10, 20));
-        gradient.setColorAt(1.0, QColor(5, 5, 15));
-    } else if(coheteActual && coheteActual->obtenerAltura() < 50000) {
-        // Atmósfera baja
-        gradient.setColorAt(0.0, QColor(10, 10, 30));
-        gradient.setColorAt(0.3, QColor(20, 30, 60));
-        gradient.setColorAt(1.0, QColor(100, 150, 200));
-    } else if(coheteActual && coheteActual->obtenerAltura() < 100000) {
-        // Atmósfera alta
-        gradient.setColorAt(0.0, QColor(5, 5, 15));
-        gradient.setColorAt(0.5, QColor(10, 20, 40));
-        gradient.setColorAt(1.0, QColor(50, 80, 120));
+    // Para el nivel 1, usar sprite de fondo si está disponible
+    if(numeroNivel == 1 && spritesCargados && !spriteFondo.isNull()) {
+        // Escalar el fondo para que cubra todo el widget
+        QPixmap fondoEscalado = spriteFondo.scaled(width(), height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        painter.drawPixmap(0, 0, fondoEscalado);
     } else {
-        // Espacio
-        gradient.setColorAt(0.0, QColor(5, 5, 15));
-        gradient.setColorAt(1.0, QColor(10, 10, 25));
-    }
+        // Fondo por defecto con gradiente
+        QLinearGradient gradient(0, 0, 0, height());
 
-    painter.fillRect(rect(), gradient);
+        if(numeroNivel == 3) {
+            // Fondo espacial para la Luna
+            gradient.setColorAt(0.0, QColor(10, 10, 20));
+            gradient.setColorAt(1.0, QColor(5, 5, 15));
+        } else if(coheteActual && coheteActual->obtenerAltura() < 50000) {
+            // Atmósfera baja
+            gradient.setColorAt(0.0, QColor(10, 10, 30));
+            gradient.setColorAt(0.3, QColor(20, 30, 60));
+            gradient.setColorAt(1.0, QColor(100, 150, 200));
+        } else if(coheteActual && coheteActual->obtenerAltura() < 100000) {
+            // Atmósfera alta
+            gradient.setColorAt(0.0, QColor(5, 5, 15));
+            gradient.setColorAt(0.5, QColor(10, 20, 40));
+            gradient.setColorAt(1.0, QColor(50, 80, 120));
+        } else {
+            // Espacio
+            gradient.setColorAt(0.0, QColor(5, 5, 15));
+            gradient.setColorAt(1.0, QColor(10, 10, 25));
+        }
+
+        painter.fillRect(rect(), gradient);
+    }
 }
 
 void VisualizacionWidget::dibujarTierra(QPainter& painter)
@@ -220,43 +240,75 @@ void VisualizacionWidget::dibujarCohete(QPainter& painter)
     // Guardar estado del painter
     painter.save();
 
-    // Color según estado
-    QColor colorCohete = coheteActual->estaDanado() ?
-                             QColor(200, 50, 50) : QColor(220, 220, 220);
+    // Usar sprite del cohete si está disponible (para nivel 1 y 2)
+    if((numeroNivel == 1 || numeroNivel == 2) && spritesCargados && !framesCohete.isEmpty()) {
+        // Calcular qué frame mostrar según el empuje
+        double empuje = coheteActual->obtenerEmpuje();
+        double empujeMaximo = 500000.0; // Empuje máximo del slider
+        int frameIndex = obtenerFrameSegunEmpuje(empuje, empujeMaximo);
+        
+        // Asegurar que el índice esté en rango
+        if(frameIndex < 0) frameIndex = 0;
+        if(frameIndex >= framesCohete.size()) frameIndex = framesCohete.size() - 1;
+        
+        // Obtener el frame correspondiente
+        QPixmap frameActual = framesCohete[frameIndex];
+        
+        // Escalar el frame del cohete (ajustar tamaño según necesidad)
+        int anchoCohete = 50;
+        int altoCohete = 80;
+        QPixmap coheteEscalado = frameActual.scaled(anchoCohete, altoCohete, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        
+        // Dibujar el cohete centrado en la posición
+        QRectF rectCohete(pos.x() - anchoCohete/2, pos.y() - altoCohete/2, anchoCohete, altoCohete);
+        painter.drawPixmap(rectCohete.toRect(), coheteEscalado);
 
-    // Cuerpo del cohete
-    painter.setPen(QPen(QColor(80, 80, 80), 2));
-    painter.setBrush(colorCohete);
+        // Si está dañado, aplicar un tinte rojizo
+        if(coheteActual->estaDanado()) {
+            painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
+            painter.fillRect(rectCohete, QColor(255, 0, 0, 100));
+            painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        }
+    } else {
+        // Dibujo por defecto (código original)
+        // Color según estado
+        QColor colorCohete = coheteActual->estaDanado() ?
+                                 QColor(200, 50, 50) : QColor(220, 220, 220);
 
-    QPolygonF cuerpoCohete;
-    cuerpoCohete << QPointF(pos.x() - 8, pos.y() + 20)   // Base izquierda
-                 << QPointF(pos.x() - 8, pos.y() - 10)   // Medio izquierdo
-                 << QPointF(pos.x(), pos.y() - 25)       // Punta
-                 << QPointF(pos.x() + 8, pos.y() - 10)   // Medio derecho
-                 << QPointF(pos.x() + 8, pos.y() + 20);  // Base derecha
+        // Cuerpo del cohete
+        painter.setPen(QPen(QColor(80, 80, 80), 2));
+        painter.setBrush(colorCohete);
 
-    painter.drawPolygon(cuerpoCohete);
+        QPolygonF cuerpoCohete;
+        cuerpoCohete << QPointF(pos.x() - 8, pos.y() + 20)   // Base izquierda
+                     << QPointF(pos.x() - 8, pos.y() - 10)   // Medio izquierdo
+                     << QPointF(pos.x(), pos.y() - 25)       // Punta
+                     << QPointF(pos.x() + 8, pos.y() - 10)   // Medio derecho
+                     << QPointF(pos.x() + 8, pos.y() + 20);  // Base derecha
 
-    // Aletas
-    QPolygonF aletaIzq;
-    aletaIzq << QPointF(pos.x() - 8, pos.y() + 10)
-             << QPointF(pos.x() - 15, pos.y() + 20)
-             << QPointF(pos.x() - 8, pos.y() + 20);
+        painter.drawPolygon(cuerpoCohete);
 
-    QPolygonF aletaDer;
-    aletaDer << QPointF(pos.x() + 8, pos.y() + 10)
-             << QPointF(pos.x() + 15, pos.y() + 20)
-             << QPointF(pos.x() + 8, pos.y() + 20);
+        // Aletas
+        QPolygonF aletaIzq;
+        aletaIzq << QPointF(pos.x() - 8, pos.y() + 10)
+                 << QPointF(pos.x() - 15, pos.y() + 20)
+                 << QPointF(pos.x() - 8, pos.y() + 20);
 
-    painter.setBrush(QColor(180, 180, 180));
-    painter.drawPolygon(aletaIzq);
-    painter.drawPolygon(aletaDer);
+        QPolygonF aletaDer;
+        aletaDer << QPointF(pos.x() + 8, pos.y() + 10)
+                 << QPointF(pos.x() + 15, pos.y() + 20)
+                 << QPointF(pos.x() + 8, pos.y() + 20);
 
-    // Ventanas (si es tripulado)
-    if(coheteActual->esTripulado()) {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(100, 200, 255));
-        painter.drawEllipse(QPointF(pos.x(), pos.y() - 5), 3, 3);
+        painter.setBrush(QColor(180, 180, 180));
+        painter.drawPolygon(aletaIzq);
+        painter.drawPolygon(aletaDer);
+
+        // Ventanas (si es tripulado)
+        if(coheteActual->esTripulado()) {
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(QColor(100, 200, 255));
+            painter.drawEllipse(QPointF(pos.x(), pos.y() - 5), 3, 3);
+        }
     }
 
     // Indicador de empuje (barra al lado)
@@ -458,4 +510,139 @@ QColor VisualizacionWidget::obtenerColorPorAltura(double altura) const
     if(altura < 50000) return QColor(50, 80, 150);        // Atmósfera media
     if(altura < 100000) return QColor(20, 30, 80);        // Atmósfera alta
     return QColor(10, 10, 30);                             // Espacio
+}
+
+void VisualizacionWidget::cargarSprites()
+{
+    // Buscar la carpeta Sprites - intentar múltiples rutas
+    QDir directorioActual = QDir::current();
+    QDir dirEjecucion = QDir(QCoreApplication::applicationDirPath());
+    
+    // Intentar diferentes rutas posibles
+    QStringList rutasPosibles;
+    
+    // Rutas relativas desde el directorio actual
+    rutasPosibles << "../Sprites"
+                  << "../../Sprites"
+                  << "../../../Sprites"
+                  << "Sprites"
+                  << directorioActual.absolutePath() + "/../Sprites"
+                  << directorioActual.absolutePath() + "/../../Sprites"
+                  << directorioActual.absolutePath() + "/../../../Sprites";
+    
+    // Rutas desde el directorio de ejecución
+    rutasPosibles << dirEjecucion.absoluteFilePath("../Sprites")
+                  << dirEjecucion.absoluteFilePath("../../Sprites")
+                  << dirEjecucion.absoluteFilePath("../../../Sprites")
+                  << dirEjecucion.absoluteFilePath("../../../../Sprites");
+    
+    // Buscar en DesafioFinal/Sprites (estructura del proyecto)
+    // Si estamos en build/.../debug, subir niveles hasta DesafioFinal
+    QString rutaProyecto = dirEjecucion.absolutePath();
+    if(rutaProyecto.contains("build") || rutaProyecto.contains("debug") || rutaProyecto.contains("release")) {
+        QDir dirDesdeBuild = QDir(rutaProyecto);
+        // Intentar subir desde build/debug o build/release
+        if(dirDesdeBuild.cdUp()) { // salir de debug/release
+            if(dirDesdeBuild.cdUp()) { // salir de build
+                if(dirDesdeBuild.cdUp()) { // salir de Juego
+                    rutasPosibles << dirDesdeBuild.absoluteFilePath("Sprites");
+                }
+            }
+        }
+    }
+    
+    // También buscar en la ruta del workspace si está disponible
+    QString rutaWorkspace = QDir::homePath() + "/OneDrive/Documentos/DesafioFinal/Sprites";
+    rutasPosibles << rutaWorkspace;
+    
+    // Buscar también desde el directorio del ejecutable subiendo hasta DesafioFinal
+    QDir dirTemp = dirEjecucion;
+    for(int i = 0; i < 5 && dirTemp.cdUp(); ++i) {
+        QString rutaSpritesTemp = dirTemp.absoluteFilePath("Sprites");
+        if(QDir(rutaSpritesTemp).exists()) {
+            rutasPosibles << rutaSpritesTemp;
+        }
+    }
+    
+    QString rutaSprites;
+    for(const QString& ruta : rutasPosibles) {
+        QFileInfo infoCohete(ruta + "/cohete.png");
+        if(infoCohete.exists() && infoCohete.isFile()) {
+            rutaSprites = ruta;
+            break;
+        }
+    }
+    
+    if(!rutaSprites.isEmpty()) {
+        QString rutaCohete = QDir(rutaSprites).absoluteFilePath("cohete.png");
+        QString rutaFondo = QDir(rutaSprites).absoluteFilePath("fondo.png");
+        
+        if(QFileInfo::exists(rutaCohete)) {
+            spriteCohete = QPixmap(rutaCohete);
+            if(spriteCohete.isNull()) {
+                // Intentar recargar
+                spriteCohete.load(rutaCohete);
+            }
+        }
+        
+        if(QFileInfo::exists(rutaFondo)) {
+            spriteFondo = QPixmap(rutaFondo);
+            if(spriteFondo.isNull()) {
+                // Intentar recargar
+                spriteFondo.load(rutaFondo);
+            }
+        }
+        
+        spritesCargados = !spriteCohete.isNull() || !spriteFondo.isNull();
+    }
+}
+
+void VisualizacionWidget::dividirSpriteSheet()
+{
+    framesCohete.clear();
+    
+    if(spriteCohete.isNull()) {
+        return;
+    }
+    
+    // Obtener dimensiones del sprite sheet
+    int anchoSheet = spriteCohete.width();
+    int altoSheet = spriteCohete.height();
+    
+    // Calcular dimensiones de cada frame
+    int anchoFrame = anchoSheet / numFramesX;
+    int altoFrame = altoSheet / numFramesY;
+    
+    // Dividir el sprite sheet en frames individuales
+    for(int fila = 0; fila < numFramesY; ++fila) {
+        for(int columna = 0; columna < numFramesX; ++columna) {
+            int x = columna * anchoFrame;
+            int y = fila * altoFrame;
+            
+            // Extraer el frame
+            QPixmap frame = spriteCohete.copy(x, y, anchoFrame, altoFrame);
+            framesCohete.append(frame);
+        }
+    }
+}
+
+int VisualizacionWidget::obtenerFrameSegunEmpuje(double empuje, double empujeMaximo) const
+{
+    if(empuje <= 0.0 || framesCohete.isEmpty()) {
+        return 0; // Frame sin llama (primera posición)
+    }
+    
+    // Calcular porcentaje de empuje (0.0 a 1.0)
+    double porcentajeEmpuje = std::min(1.0, empuje / empujeMaximo);
+    
+    // Mapear a frame (0 = sin llama, 1-8 = diferentes niveles de llama)
+    // El frame 0 es sin llama, así que usamos frames 1-8 para los diferentes niveles
+    int totalFrames = framesCohete.size();
+    int frameIndex = static_cast<int>(porcentajeEmpuje * (totalFrames - 1));
+    
+    // Asegurar que esté en rango
+    if(frameIndex < 0) frameIndex = 0;
+    if(frameIndex >= totalFrames) frameIndex = totalFrames - 1;
+    
+    return frameIndex;
 }

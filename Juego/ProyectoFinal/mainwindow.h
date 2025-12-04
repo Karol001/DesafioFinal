@@ -32,6 +32,7 @@ private slots:
     void on_btnPausar_clicked();
     void on_btnReiniciar_clicked();
     void on_sliderEmpuje_valueChanged(int value);
+    void on_spinVelocidadInicial_valueChanged(double value);
 
     // Slot para actualización
     void actualizarJuego();

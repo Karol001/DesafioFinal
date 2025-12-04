@@ -25,6 +25,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->sliderEmpuje->setValue(0);
     ui->btnPausar->setEnabled(false);
     ui->btnReiniciar->setEnabled(false);
+    
+    // Inicialmente deshabilitar campo de velocidad inicial hasta que se seleccione nivel 1
+    ui->spinVelocidadInicial->setEnabled(false);
+    ui->labelVelocidadInicial->setEnabled(false);
 
     // Mensaje inicial de HAL
     agregarMensajeHAL("HAL-69: Sistemas iniciados. Selecciona un nivel para comenzar.");
@@ -62,6 +66,10 @@ void MainWindow::on_btnNivel1_clicked()
 {
     juego->iniciarNivel(1);
 
+    // Establecer velocidad inicial desde el campo de entrada
+    double velocidadInicial = ui->spinVelocidadInicial->value();
+    juego->establecerVelocidadInicial(velocidadInicial);
+
     ui->labelNombreNivel->setText("SPUTNIK 1957");
     ui->labelDescripcionNivel->setText(
         QString::fromStdString(juego->obtenerNivel()->obtenerDescripcion())
@@ -70,7 +78,12 @@ void MainWindow::on_btnNivel1_clicked()
     widgetVisualizacion->actualizarNivel(juego->obtenerNivel(), 1);
     widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
 
-    agregarMensajeHAL("HAL-69: Nivel 1 cargado. Objetivo: Alcanzar 100 km de altura.");
+    // Habilitar campo de velocidad inicial solo para nivel 1
+    ui->spinVelocidadInicial->setEnabled(true);
+    ui->labelVelocidadInicial->setEnabled(true);
+
+    agregarMensajeHAL(QString("HAL-69: Nivel 1 cargado. Velocidad inicial: %1 m/s. Objetivo: Alcanzar 100 km de altura.")
+                      .arg(velocidadInicial, 0, 'f', 1));
 
     ui->btnIniciar->setEnabled(true);
     ui->btnReiniciar->setEnabled(true);
@@ -88,6 +101,10 @@ void MainWindow::on_btnNivel2_clicked()
 
     widgetVisualizacion->actualizarNivel(juego->obtenerNivel(), 2);
     widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
+
+    // Deshabilitar campo de velocidad inicial para otros niveles
+    ui->spinVelocidadInicial->setEnabled(false);
+    ui->labelVelocidadInicial->setEnabled(false);
 
     agregarMensajeHAL("HAL-69: Nivel 2 cargado. Mantén velocidad entre 2000-9000 m/s.");
 
@@ -108,6 +125,10 @@ void MainWindow::on_btnNivel3_clicked()
     widgetVisualizacion->actualizarNivel(juego->obtenerNivel(), 3);
     widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
 
+    // Deshabilitar campo de velocidad inicial para otros niveles
+    ui->spinVelocidadInicial->setEnabled(false);
+    ui->labelVelocidadInicial->setEnabled(false);
+
     agregarMensajeHAL("HAL-69: Nivel 3 cargado. Alunizaje: velocidad máxima 5 m/s.");
 
     ui->btnIniciar->setEnabled(true);
@@ -121,8 +142,11 @@ void MainWindow::on_btnNivel3_clicked()
 
 void MainWindow::on_btnIniciar_clicked()
 {
-    if(!juego->estaEnEjecucion()) {
-        // Iniciar simulación
+    if(!juego->estaEnEjecucion() && juego->obtenerNivelActual() > 0) {
+        // Iniciar simulación en el juego
+        juego->iniciarSimulacion();
+        
+        // Iniciar timer y animación
         timerJuego->start(100); // Actualizar cada 100ms
         widgetVisualizacion->iniciarAnimacion();
 
@@ -176,6 +200,12 @@ void MainWindow::on_btnReiniciar_clicked()
 
     juego->reiniciarNivel();
 
+    // Reestablecer velocidad inicial si es el nivel 1
+    if(juego->obtenerNivelActual() == 1) {
+        double velocidadInicial = ui->spinVelocidadInicial->value();
+        juego->establecerVelocidadInicial(velocidadInicial);
+    }
+
     widgetVisualizacion->reiniciar();
     widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
 
@@ -200,6 +230,15 @@ void MainWindow::on_sliderEmpuje_valueChanged(int value)
     juego->ajustarEmpuje(static_cast<double>(value));
 
     ui->labelEmpujeValor->setText(QString("%1 N").arg(value));
+}
+
+void MainWindow::on_spinVelocidadInicial_valueChanged(double value)
+{
+    // Si el nivel 1 está cargado pero no iniciado, actualizar la velocidad inicial
+    if(juego->obtenerNivelActual() == 1 && !juego->estaEnEjecucion()) {
+        juego->establecerVelocidadInicial(value);
+        widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
+    }
 }
 
 // ============================================================================

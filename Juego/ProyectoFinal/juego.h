@@ -52,6 +52,7 @@ public:
     void ajustarEmpuje(double nuevoEmpuje);
     void establecerVelocidadInicial(double velocidad);
     void establecerAlturaInicial(double altura);
+    void iniciarSimulacion();
 
     bool estaEnEjecucion() const;
     bool estaPausado() const;

@@ -29,7 +29,8 @@ void Juego::iniciarNivel(int numeroNivel) {
     inicializarNivel(numeroNivel);
     configurarCoheteParaNivel(numeroNivel);
 
-    enEjecucion = true;
+    // NO establecer enEjecucion aquí - solo se establece cuando se inicia la simulación
+    enEjecucion = false;
     pausado = false;
 
     imprimirInformacionNivel();
@@ -62,7 +63,8 @@ void Juego::configurarCoheteParaNivel(int nivel) {
     switch (nivel) {
     case 1:
         cohete->establecerAltura(0.0);
-        cohete->establecerVelocidadInicial(0.0);
+        // La velocidad inicial se establecerá desde la UI
+        // cohete->establecerVelocidadInicial(0.0);
         cohete->ajustarEmpuje(0.0);
         break;
     case 2:
@@ -102,7 +104,8 @@ void Juego::aplicarFisicaNivel() {
     if (!nivelActual || !cohete) return;
 
     nivelActual->aplicarFisica(cohete.get(), deltaTime);
-    consumirCombustiblePorEmpuje();
+    // El consumo de combustible se maneja dentro de aplicarFisica de cada nivel
+    // consumirCombustiblePorEmpuje(); // Comentado porque cada nivel maneja su propio consumo
     manejarColisionSuelo();
 }
 
@@ -264,6 +267,13 @@ void Juego::ajustarEmpuje(double nuevoEmpuje) {
     }
 }
 
+void Juego::iniciarSimulacion() {
+    if (nivelNumero > 0 && !victoria && !derrota) {
+        enEjecucion = true;
+        pausado = false;
+    }
+}
+
 void Juego::establecerVelocidadInicial(double velocidad) {
     if (cohete) {
         cohete->establecerVelocidadInicial(velocidad);
@@ -295,7 +305,11 @@ void Juego::reanudar() {
 }
 
 void Juego::reiniciarNivel() {
-    iniciarNivel(nivelNumero);
+    int nivel = nivelNumero; // Guardar el número de nivel antes de limpiar
+    iniciarNivel(nivel);
+    // Asegurar que no esté en ejecución después de reiniciar
+    enEjecucion = false;
+    pausado = false;
 }
 
 void Juego::siguienteNivel() {
@@ -325,6 +339,7 @@ AgenteHAL69* Juego::obtenerAgenteHAL() {
 
 void Juego::simularNivel1Interactivo(double velocidadInicial) {
     iniciarNivel(1);
+    velocidadInicial=1000;
     establecerVelocidadInicial(velocidadInicial);
     ajustarEmpuje(0.0);
 
