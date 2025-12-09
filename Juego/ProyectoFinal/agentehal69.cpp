@@ -69,6 +69,57 @@ void AgenteHAL69::analizarEstado(int numeroNivel,
     }
 }
 
+std::string AgenteHAL69::obtenerMensajeUI(int numeroNivel,
+                                         const Nivel& nivel,
+                                         const Cohete& cohete,
+                                         double tiempoSimulacion)
+{
+    double v = cohete.obtenerVelocidad();
+    double fuel = cohete.obtenerPorcentajeCombustible();
+    double h = cohete.obtenerAltura();
+    double alturaObjetivo = nivel.obtenerAlturaObjetivo();
+    
+    // Mensajes positivos
+    if (numeroNivel == 2) {
+        if (v >= 2000.0 && v <= 8500.0 && fuel > 30.0 && h < alturaObjetivo) {
+            double progreso = (h / alturaObjetivo) * 100.0;
+            if (progreso > 50.0) {
+                return "Excelente progreso. Mantén esta velocidad y llegarás al objetivo.";
+            } else if (progreso > 25.0) {
+                return "Buen ritmo. Continúa así para alcanzar la órbita.";
+            }
+        }
+        
+        // Advertencias
+        if (v > 10000.0) {
+            return "¡PELIGRO! Velocidad crítica. Reduce el empuje inmediatamente o la nave se destruirá.";
+        } else if (v > 9500.0) {
+            return "Velocidad muy alta. Reduce el empuje para evitar daños.";
+        } else if (v < 2000.0 && h < alturaObjetivo * 0.5) {
+            return "Velocidad baja. Aumenta el empuje para mantener el ascenso.";
+        }
+        
+        if (fuel < 10.0) {
+            return "¡COMBUSTIBLE CRÍTICO! Optimiza el empuje o no alcanzarás el objetivo.";
+        } else if (fuel < 25.0) {
+            return "Combustible bajo. Ajusta el empuje para optimizar el consumo.";
+        }
+        
+        if (h >= alturaObjetivo * 0.9 && v >= 2000.0 && v <= 8500.0) {
+            return "¡Casi ahí! Mantén la velocidad actual para completar la misión.";
+        }
+    } else if (numeroNivel == 1) {
+        if (v > 7500.0 && h < 100000.0) {
+            return "Velocidad muy alta en la atmósfera. Podrías quemar el Sputnik.";
+        }
+        if (fuel < 20.0) {
+            return "Combustible bajo. Ajusta el empuje.";
+        }
+    }
+    
+    return ""; // Sin mensaje si todo está bien
+}
+
 void AgenteHAL69::registrarFalloNivel2PorVelocidadAlta()
 {
     ++fallosVelocidadAltaNivel2;

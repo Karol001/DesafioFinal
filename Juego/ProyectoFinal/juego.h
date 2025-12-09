@@ -40,6 +40,7 @@ public:
     ~Juego();
 
     void iniciarNivel(int numeroNivel);
+    void iniciarNivelDesdeVictoria(int numeroNivel); // Iniciar nivel manteniendo estado del cohete
     void iniciarNivel1();
     void iniciarNivel2();
     void iniciarNivel3();

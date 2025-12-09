@@ -24,6 +24,11 @@ public:
                         const Cohete& cohete,
                         double tiempoSimulacion);
 
+    std::string obtenerMensajeUI(int numeroNivel,
+                                  const Nivel& nivel,
+                                  const Cohete& cohete,
+                                  double tiempoSimulacion);
+
     void registrarFalloNivel2PorVelocidadAlta();
 };
 

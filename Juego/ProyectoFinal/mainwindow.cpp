@@ -256,6 +256,30 @@ void MainWindow::actualizarJuego()
 
     // Actualizar la interfaz
     actualizarInterfaz();
+    
+    // Obtener mensaje de HAL69 y mostrarlo si hay algo importante
+    std::string mensajeHAL = juego->obtenerAgenteHAL()->obtenerMensajeUI(
+        juego->obtenerNivelActual(),
+        *juego->obtenerNivel(),
+        *juego->obtenerCohete(),
+        juego->obtenerTiempoSimulacion()
+    );
+    
+    // Solo mostrar mensajes importantes (no vacíos) y no repetirlos constantemente
+    static std::string ultimoMensajeHAL = "";
+    static int contadorMensajes = 0;
+    
+    if(!mensajeHAL.empty() && mensajeHAL != ultimoMensajeHAL) {
+        // Mostrar mensaje cada 2 segundos aproximadamente (cada 20 actualizaciones)
+        if(contadorMensajes % 20 == 0) {
+            agregarMensajeHAL(QString::fromStdString(mensajeHAL));
+            ultimoMensajeHAL = mensajeHAL;
+        }
+        contadorMensajes++;
+    } else if(mensajeHAL.empty()) {
+        ultimoMensajeHAL = "";
+        contadorMensajes = 0;
+    }
 
     // Verificar estado (victoria/derrota)
     verificarEstadoJuego();
@@ -387,7 +411,26 @@ void MainWindow::mostrarMensajeVictoria()
 
             switch(siguienteNivel) {
             case 2:
-                on_btnNivel2_clicked();
+                // Iniciar nivel 2 manteniendo la velocidad del nivel 1
+                juego->iniciarNivelDesdeVictoria(2);
+                
+                ui->labelNombreNivel->setText("VOSTOK 1 - 1961");
+                ui->labelDescripcionNivel->setText(
+                    QString::fromStdString(juego->obtenerNivel()->obtenerDescripcion())
+                    );
+
+                widgetVisualizacion->actualizarNivel(juego->obtenerNivel(), 2);
+                widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
+
+                ui->spinVelocidadInicial->setEnabled(false);
+                ui->labelVelocidadInicial->setEnabled(false);
+
+                agregarMensajeHAL(QString("HAL-69: Nivel 2 iniciado. Velocidad actual: %1 m/s. Mantén velocidad entre 2000-9000 m/s.")
+                                  .arg(juego->obtenerCohete()->obtenerVelocidad(), 0, 'f', 1));
+
+                ui->btnIniciar->setEnabled(true);
+                ui->btnReiniciar->setEnabled(true);
+                actualizarTelemetria();
                 break;
             case 3:
                 on_btnNivel3_clicked();

@@ -3,13 +3,13 @@
 
 Nivel2_Vostok::Nivel2_Vostok()
     : Nivel("Vostok 1 - 1961",
-            300000.0,
-            12000.0,
+            200000.0,  // Reducido de 300km a 200km para hacerlo más jugable
+            11000.0,   // Velocidad máxima reducida para más control
             0.0,
             9.81,
             0.3),
     velocidadSeguraMin(2000.0),
-    velocidadSeguraMax(9000.0)
+    velocidadSeguraMax(8500.0)  // Reducido ligeramente para más desafío
 {
 }
 
@@ -53,7 +53,7 @@ std::string Nivel2_Vostok::obtenerDescripcion() const {
 }
 
 std::string Nivel2_Vostok::obtenerObjetivo() const {
-    return "Alcanzar 300 km manteniendo velocidad entre 2000-9000 m/s.";
+    return "Alcanzar 200 km manteniendo velocidad entre 2000-8500 m/s.";
 }
 
 bool Nivel2_Vostok::fueraRangoVelocidadSegura(Cohete* cohete) const {

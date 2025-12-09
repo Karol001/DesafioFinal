@@ -36,6 +36,27 @@ void Juego::iniciarNivel(int numeroNivel) {
     imprimirInformacionNivel();
 }
 
+void Juego::iniciarNivelDesdeVictoria(int numeroNivel) {
+    // Iniciar nivel manteniendo el estado del cohete (velocidad, altura, combustible)
+    // Esto se usa cuando se pasa de un nivel al siguiente
+    limpiarEstadoAnterior();
+    nivelNumero = numeroNivel;
+
+    inicializarNivel(numeroNivel);
+    
+    // NO llamar a configurarCoheteParaNivel porque queremos mantener el estado
+    // Solo reconfigurar para el nuevo nivel sin resetear velocidad/altura
+    cohete->configurarParaNivel(numeroNivel);
+    // Mantener la velocidad y altura actuales del cohete
+    // La altura y velocidad se mantienen automáticamente porque no las reseteamos
+    
+    // NO establecer enEjecucion aquí - solo se establece cuando se inicia la simulación
+    enEjecucion = false;
+    pausado = false;
+
+    imprimirInformacionNivel();
+}
+
 void Juego::inicializarNivel(int numeroNivel) {
     switch (numeroNivel) {
     case 1:
@@ -161,11 +182,22 @@ void Juego::verificarEstado() {
         return;
     }
 
-    if (!cohete->tieneCombustible() &&
-        cohete->obtenerAltura() < nivelActual->obtenerAlturaObjetivo()) {
-        derrota = true;
-        enEjecucion = false;
-        return;
+    // Para nivel 2: verificar si se quedó sin combustible antes de llegar
+    if (nivelNumero == 2) {
+        if (!cohete->tieneCombustible() &&
+            cohete->obtenerAltura() < nivelActual->obtenerAlturaObjetivo()) {
+            derrota = true;
+            enEjecucion = false;
+            return;
+        }
+    } else {
+        // Para otros niveles
+        if (!cohete->tieneCombustible() &&
+            cohete->obtenerAltura() < nivelActual->obtenerAlturaObjetivo()) {
+            derrota = true;
+            enEjecucion = false;
+            return;
+        }
     }
 }
 
@@ -241,8 +273,12 @@ std::string Juego::obtenerRazonDerrota() const {
     if (cohete->estaDanado()) {
         if (nivelNumero == 1 && cohete->obtenerVelocidad() > 8000.0) {
             return "El cohete se quemo por exceso de velocidad en la atmosfera";
-        } else if (nivelNumero == 2 && cohete->obtenerVelocidad() > 12000.0) {
-            return "Velocidad excesiva (>12000 m/s) daño la nave";
+        } else if (nivelNumero == 2) {
+            if (cohete->obtenerVelocidad() > 12000.0) {
+                return "Velocidad excesiva (>12000 m/s) destruyo la nave";
+            } else {
+                return "El cohete ha sido danado";
+            }
         } else if (nivelNumero == 3 && cohete->obtenerAltura() <= 0.0) {
             return "Impacto demasiado fuerte en la superficie lunar";
         } else {
@@ -251,6 +287,9 @@ std::string Juego::obtenerRazonDerrota() const {
     }
 
     if (!cohete->tieneCombustible()) {
+        if (nivelNumero == 2) {
+            return "Sin combustible antes de alcanzar el objetivo. Ajusta el empuje para optimizar el consumo.";
+        }
         return "Sin combustible antes de alcanzar el objetivo";
     }
 

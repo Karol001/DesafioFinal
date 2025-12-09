@@ -45,34 +45,35 @@ private:
     // Sprites
     QPixmap spriteCohete;  // Sprite sheet completo
     QPixmap spriteFondo;
+    QPixmap spriteFondo2;  // Fondo para nivel 2
+    QPixmap spriteFondo3;  // Fondo para nivel 3
+    QPixmap spriteExplosion;  // Sprite de explosión
     QVector<QPixmap> framesCohete;  // Frames individuales del sprite sheet
     bool spritesCargados;
-    int numFramesX;  // Número de frames en X (columnas)
-    int numFramesY;  // Número de frames en Y (filas)
+    int numFramesX;  
+    int numFramesY;  
+    bool mostrarExplosion;  
 
     // Métodos de dibujo
     void dibujarFondo(QPainter& painter);
     void dibujarTierra(QPainter& painter);
     void dibujarAtmosfera(QPainter& painter);
-    void dibujarEspacio(QPainter& painter);
     void dibujarEstrellas(QPainter& painter);
     void dibujarCohete(QPainter& painter);
     void dibujarPropulsion(QPainter& painter, const QPointF& posicion);
     void dibujarIndicadores(QPainter& painter);
     void dibujarLineaObjetivo(QPainter& painter);
     void dibujarMarcadoresAltura(QPainter& painter);
-    void dibujarLuna(QPainter& painter); // Para nivel 3
+    void dibujarLuna(QPainter& painter); 
+    void dibujarExplosion(QPainter& painter); 
 
-    // Métodos auxiliares
     void calcularPosicionCohete();
     void calcularEscalaAltura();
-    QColor obtenerColorPorAltura(double altura) const;
     double alturaAPixel(double altura) const;
     void cargarSprites();
     void dividirSpriteSheet();
     int obtenerFrameSegunEmpuje(double empuje, double empujeMaximo) const;
 
-    // Efectos visuales
     void dibujarParticulas(QPainter& painter);
     QVector<QPointF> particulasPropulsion;
 
