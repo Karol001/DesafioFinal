@@ -64,6 +64,8 @@ void Juego::iniciarNivelDesdeVictoria(int numeroNivel) {
         cohete->establecerVelocidad(0.0); // Reiniciar velocidad para descenso
         cohete->establecerCombustible(combustibleActual);
         cohete->establecerAltura(15000.0); // Altura inicial del nivel 3
+        cohete->establecerPosicionX(0.0);  // Iniciar en el centro
+        cohete->establecerVelocidadX(0.0);
 
         std::cout << "\n=== Transición Nivel 2 -> Nivel 3 ===\n";
         std::cout << "Velocidad inicial: 0.0 m/s (descenso)\n";
@@ -124,6 +126,8 @@ void Juego::configurarCoheteParaNivel(int nivel) {
     case 3:
         cohete->establecerAltura(15000.0);
         cohete->establecerVelocidadInicial(0.0);
+        cohete->establecerPosicionX(0.0);  // Iniciar en el centro
+        cohete->establecerVelocidadX(0.0);
         cohete->ajustarEmpuje(0.0);
         break;
     }
@@ -318,7 +322,13 @@ std::string Juego::obtenerRazonDerrota() const {
                 return "El cohete ha sido danado";
             }
         } else if (nivelNumero == 3 && cohete->obtenerAltura() <= 0.0) {
-            return "Impacto demasiado fuerte en la superficie lunar";
+            // Verificar si no aterrizó en la zona correcta
+            auto* apolo = dynamic_cast<Nivel3_Apolo11*>(nivelActual.get());
+            if (apolo && !apolo->verificarAterrizajeEnZona(cohete.get())) {
+                return "Perdiste la mision: El cohete no aterrizo en la zona de aterrizaje correcta";
+            } else {
+                return "Perdiste la mision: Impacto demasiado fuerte en la superficie lunar";
+            }
         } else {
             return "El cohete ha sido danado";
         }
@@ -341,6 +351,13 @@ std::string Juego::obtenerRazonDerrota() const {
 void Juego::ajustarEmpuje(double nuevoEmpuje) {
     if (cohete) {
         cohete->ajustarEmpuje(nuevoEmpuje);
+    }
+}
+
+void Juego::moverCoheteHorizontal(double deltaX) {
+    if (cohete && nivelNumero == 3 && enEjecucion && !pausado) {
+        // Ajustar velocidad horizontal en nivel 3
+        cohete->ajustarVelocidadX(deltaX);
     }
 }
 

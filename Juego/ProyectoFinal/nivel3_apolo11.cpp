@@ -25,15 +25,21 @@ bool Nivel3_Apolo11::verificarVictoria(Cohete* cohete) {
     if (cohete->obtenerAltura() <= alturaSuperficie + 1.0 &&
         v >= velocidadAterrizajeMin &&
         v <= velocidadAterrizajeMax &&
-        !cohete->estaDanado())
+        !cohete->estaDanado() &&
+        verificarAterrizajeEnZona(cohete))
     {
         return true;
     }
 
-    if (cohete->obtenerAltura() <= alturaSuperficie &&
-        (v < velocidadAterrizajeMin || v > velocidadAterrizajeMax))
-    {
-        cohete->marcarDanado();
+    if (cohete->obtenerAltura() <= alturaSuperficie) {
+        // Verificar si no aterrizó en la zona correcta
+        if (!verificarAterrizajeEnZona(cohete)) {
+            // No está en la zona, marcar como dañado
+            cohete->marcarDanado();
+        } else if (v < velocidadAterrizajeMin || v > velocidadAterrizajeMax) {
+            // Está en la zona pero velocidad incorrecta
+            cohete->marcarDanado();
+        }
     }
 
     return false;
@@ -48,6 +54,8 @@ void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
     if (!enDescenso) {
         cohete->establecerAltura(alturaInicial);
         cohete->establecerVelocidad(0.0);
+        cohete->establecerPosicionX(0.0);  // Iniciar en el centro
+        cohete->establecerVelocidadX(0.0);
         enDescenso = true;
     }
 
@@ -63,6 +71,26 @@ void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
     }
 
     cohete->aplicarGravedad(gravedadLunar, deltaTime);
+    
+    // Aplicar fricción a la velocidad horizontal (simular inercia en el espacio)
+    double velocidadXActual = cohete->obtenerVelocidadX();
+    if (std::abs(velocidadXActual) > 0.01) {
+        // Reducir gradualmente la velocidad horizontal (95% cada segundo)
+        double factorFriccion = std::pow(0.95, deltaTime);
+        cohete->establecerVelocidadX(velocidadXActual * factorFriccion);
+    } else {
+        cohete->establecerVelocidadX(0.0);
+    }
+    
+    // Limitar posición X dentro del rango del nivel (aproximadamente -1000 a 1000 metros)
+    double posX = cohete->obtenerPosicionX();
+    if (posX > 1000.0) {
+        cohete->establecerPosicionX(1000.0);
+        cohete->establecerVelocidadX(0.0);
+    } else if (posX < -1000.0) {
+        cohete->establecerPosicionX(-1000.0);
+        cohete->establecerVelocidadX(0.0);
+    }
 
     cohete->actualizarEstado(deltaTime);
 
@@ -112,5 +140,15 @@ std::string Nivel3_Apolo11::obtenerFaseDescenso(Cohete* cohete) const {
 
 double Nivel3_Apolo11::obtenerVelocidadIdeal(double altura) const {
     return -std::sqrt(2.0 * gravedadLunar * altura);
+}
+
+bool Nivel3_Apolo11::verificarAterrizajeEnZona(const Cohete* cohete) const {
+    // El área de aterrizaje es el 25% central de la pantalla
+    // En coordenadas del cohete (metros), asumiendo que el ancho total es 2000m
+    // El centro sería de -250m a +250m (25% del total de 2000m = 500m, mitad = 250m)
+    double posicionX = cohete->obtenerPosicionX();
+    double rangoAterrizaje = 250.0;  // 25% del ancho total de 2000m
+    
+    return (posicionX >= -rangoAterrizaje && posicionX <= rangoAterrizaje);
 }
 

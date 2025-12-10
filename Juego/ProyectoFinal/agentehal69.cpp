@@ -74,6 +74,7 @@ std::string AgenteHAL69::obtenerMensajeUI(int numeroNivel,
                                          const Cohete& cohete,
                                          double tiempoSimulacion)
 {
+    (void)tiempoSimulacion; // Parámetro reservado para uso futuro
     double v = cohete.obtenerVelocidad();
     double fuel = cohete.obtenerPorcentajeCombustible();
     double h = cohete.obtenerAltura();

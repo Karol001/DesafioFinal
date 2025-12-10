@@ -2,8 +2,10 @@
 #include <algorithm>
 
 Cohete::Cohete()
-    : velocidad(0.0), altura(0.0), combustible(8000.0),combustibleMaximo(8000.0),
-    empuje(0.0), masaSeca(3000.0), masa(3000.0 + 8000.0), danado(false), tripulado(false),
+    : velocidad(0.0), altura(0.0), posicionX(0.0), velocidadX(0.0), 
+    combustible(8000.0), combustibleMaximo(8000.0),
+    empuje(0.0), masa(3000.0 + 8000.0), masaSeca(3000.0),
+    danado(false), tripulado(false),
     aceleracion(0.0), velocidadAnterior(0.0){}
 
 void Cohete::actualizarEstado(double deltaTime) {
@@ -13,6 +15,9 @@ void Cohete::actualizarEstado(double deltaTime) {
     velocidadAnterior = velocidad;
 
     altura += velocidad * deltaTime;
+    
+    // Actualizar posición horizontal
+    posicionX += velocidadX * deltaTime;
 
     if (altura <= 0.0) {
         if (velocidad < -300.0) {
@@ -39,6 +44,14 @@ double Cohete::obtenerVelocidad() const {
 
 double Cohete::obtenerAltura() const {
     return altura;
+}
+
+double Cohete::obtenerPosicionX() const {
+    return posicionX;
+}
+
+double Cohete::obtenerVelocidadX() const {
+    return velocidadX;
 }
 
 double Cohete::obtenerCombustible() const {
@@ -80,6 +93,22 @@ void Cohete::establecerVelocidad(double vel) {
 
 void Cohete::establecerAltura(double alt) {
     altura = std::max(0.0, alt);
+}
+
+void Cohete::establecerPosicionX(double x) {
+    posicionX = x;
+}
+
+void Cohete::establecerVelocidadX(double vx) {
+    velocidadX = vx;
+}
+
+void Cohete::ajustarVelocidadX(double deltaVx) {
+    velocidadX += deltaVx;
+    // Limitar velocidad horizontal máxima
+    const double VELOCIDAD_X_MAX = 50.0;
+    if (velocidadX > VELOCIDAD_X_MAX) velocidadX = VELOCIDAD_X_MAX;
+    if (velocidadX < -VELOCIDAD_X_MAX) velocidadX = -VELOCIDAD_X_MAX;
 }
 
 
@@ -139,6 +168,8 @@ void Cohete::reiniciarEstado() {
     velocidad = 0.0;
     velocidadAnterior = 0.0;
     altura = 0.0;
+    posicionX = 0.0;
+    velocidadX = 0.0;
     empuje = 0.0;
     danado = false;
     aceleracion = 0.0;

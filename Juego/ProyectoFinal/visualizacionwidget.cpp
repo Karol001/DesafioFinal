@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QUrl>
 #include <cmath>
 
 VisualizacionWidget::VisualizacionWidget(QWidget *parent)
@@ -20,7 +21,10 @@ VisualizacionWidget::VisualizacionWidget(QWidget *parent)
     spritesCargados(false),
     numFramesX(3),
     numFramesY(3),
-    mostrarExplosion(false)
+    mostrarExplosion(false),
+    frameExplosionActual(0),
+    explosionCompletada(false),
+    sonidoArranqueReproducido(false)
 {
     setMinimumSize(600, 600);
 
@@ -31,13 +35,29 @@ VisualizacionWidget::VisualizacionWidget(QWidget *parent)
         particulasPropulsion.append(QPointF(0, 0));
     }
 
+    // Inicializar sonidos
+    sonidoExplosion = new QMediaPlayer(this);
+    sonidoArranque = new QMediaPlayer(this);
+    sonidoBase = new QMediaPlayer(this);
+    audioOutput = new QAudioOutput(this);
+    audioOutputExplosion = new QAudioOutput(this);
+    audioOutputArranque = new QAudioOutput(this);
+    sonidoBase->setAudioOutput(audioOutput);
+    sonidoExplosion->setAudioOutput(audioOutputExplosion);
+    sonidoArranque->setAudioOutput(audioOutputArranque);
+    
     cargarSprites();
     dividirSpriteSheet();
+    dividirSpriteSheetExplosion();
+    cargarSonidos();
 }
 
 VisualizacionWidget::~VisualizacionWidget()
 {
     detenerAnimacion();
+    if(sonidoBase) {
+        sonidoBase->stop();
+    }
 }
 
 void VisualizacionWidget::actualizarCohete(const Cohete* cohete)
@@ -46,12 +66,26 @@ void VisualizacionWidget::actualizarCohete(const Cohete* cohete)
     if(cohete) {
         calcularPosicionCohete();
         
-        if(numeroNivel == 2 && cohete->obtenerVelocidad() > 11000.0) {
-            mostrarExplosion = true;
-        } else if(cohete->estaDanado() && cohete->obtenerVelocidad() > 10000.0) {
+        // Mostrar explosión cuando el cohete está dañado en cualquier nivel
+        if(cohete->estaDanado()) {
+            if(!mostrarExplosion) {
+                frameExplosionActual = 0; // Reiniciar animación
+                explosionCompletada = false;
+                reproducirSonidoExplosion();
+            }
             mostrarExplosion = true;
         } else {
             mostrarExplosion = false;
+            frameExplosionActual = 0;
+            explosionCompletada = false;
+        }
+        
+        // Reproducir sonido de arranque cuando el cohete empieza a tener empuje
+        if(cohete->obtenerEmpuje() > 0 && !sonidoArranqueReproducido) {
+            reproducirSonidoArranque();
+            sonidoArranqueReproducido = true;
+        } else if(cohete->obtenerEmpuje() == 0) {
+            sonidoArranqueReproducido = false;
         }
         
         update();
@@ -69,7 +103,7 @@ void VisualizacionWidget::actualizarNivel(const Nivel* nivel, int numNivel)
 void VisualizacionWidget::iniciarAnimacion()
 {
     animacionActiva = true;
-    timerAnimacion->start(50);
+    timerAnimacion->start(50);  // 50ms = 20 FPS para la animación
 }
 
 void VisualizacionWidget::detenerAnimacion()
@@ -81,6 +115,10 @@ void VisualizacionWidget::detenerAnimacion()
 void VisualizacionWidget::reiniciar()
 {
     frameAnimacion = 0;
+    frameExplosionActual = 0;
+    explosionCompletada = false;
+    mostrarExplosion = false;
+    sonidoArranqueReproducido = false;
     particulasPropulsion.clear();
     for(int i = 0; i < 20; ++i) {
         particulasPropulsion.append(QPointF(0, 0));
@@ -101,6 +139,16 @@ void VisualizacionWidget::actualizarAnimacion()
         double desvio = (QRandomGenerator::global()->bounded(20) - 10) / 10.0;
         particulasPropulsion[0] = QPointF(posicionCohete.x() + desvio,
                                           posicionCohete.y() + 30);
+    }
+    
+    // Avanzar animación de explosión si está activa (solo una vez, no en bucle)
+    if(mostrarExplosion && !framesExplosion.isEmpty() && !explosionCompletada) {
+        frameExplosionActual++;
+        if(frameExplosionActual >= framesExplosion.size()) {
+            // Detener la animación después de mostrar todos los frames una vez
+            explosionCompletada = true;
+            frameExplosionActual = framesExplosion.size() - 1; // Mantener el último frame
+        }
     }
 
     update();
@@ -123,9 +171,13 @@ void VisualizacionWidget::paintEvent(QPaintEvent *event)
     dibujarEstrellas(painter);
     dibujarIndicadores(painter);
     dibujarMarcadoresAltura(painter);
+    
+    if(numeroNivel == 3) {
+        dibujarAreaAterrizaje(painter);
+    }
 
     if(coheteActual) {
-        if(mostrarExplosion && !spriteExplosion.isNull()) {
+        if(mostrarExplosion && !framesExplosion.isEmpty()) {
             dibujarExplosion(painter);
         } else if(!mostrarExplosion) {
             dibujarCohete(painter);
@@ -474,15 +526,52 @@ void VisualizacionWidget::dibujarLuna(QPainter& painter)
     }
 }
 
+void VisualizacionWidget::dibujarAreaAterrizaje(QPainter& painter)
+{
+    int alturaSuperficie = height() - 50;
+    
+    // Área de aterrizaje en la mitad de la pantalla (cuarto central)
+    double anchoArea = width() * 0.25;  // 25% del ancho
+    double xInicio = (width() / 2.0) - (anchoArea / 2.0);
+    double xFin = xInicio + anchoArea;
+    
+    // Dibujar área de aterrizaje con semi-transparencia
+    painter.setPen(QPen(QColor(0, 255, 0, 150), 3, Qt::DashLine));
+    painter.setBrush(QColor(0, 255, 0, 30));
+    
+    QRectF areaAterrizaje(xInicio, alturaSuperficie - 20, anchoArea, 20);
+    painter.drawRect(areaAterrizaje);
+    
+    // Dibujar líneas verticales en los bordes
+    painter.setPen(QPen(QColor(0, 255, 0, 200), 2));
+    painter.drawLine(QPointF(xInicio, alturaSuperficie - 40), QPointF(xInicio, alturaSuperficie));
+    painter.drawLine(QPointF(xFin, alturaSuperficie - 40), QPointF(xFin, alturaSuperficie));
+    
+    // Etiqueta
+    painter.setPen(QColor(0, 255, 0));
+    painter.setFont(QFont("Arial", 12, QFont::Bold));
+    QString texto = "ZONA DE ATERRIZAJE";
+    QRectF rectTexto(xInicio, alturaSuperficie - 60, anchoArea, 20);
+    painter.drawText(rectTexto, Qt::AlignCenter, texto);
+}
+
 void VisualizacionWidget::dibujarExplosion(QPainter& painter)
 {
-    if(!coheteActual || spriteExplosion.isNull()) return;
+    if(!coheteActual || framesExplosion.isEmpty()) return;
     
     QPointF pos = posicionCohete;
     
-    int anchoExplosion = 100;
-    int altoExplosion = 100;
-    QPixmap explosionEscalada = spriteExplosion.scaled(anchoExplosion, altoExplosion, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    // Seleccionar el frame actual de la explosión
+    if(frameExplosionActual >= framesExplosion.size()) {
+        frameExplosionActual = framesExplosion.size() - 1;
+    }
+    
+    QPixmap frameExplosion = framesExplosion[frameExplosionActual];
+    
+    // Tamaño proporcional al cohete (cohete es 50x80, explosión un poco más grande)
+    int anchoExplosion = 80;
+    int altoExplosion = 80;
+    QPixmap explosionEscalada = frameExplosion.scaled(anchoExplosion, altoExplosion, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     
     QRectF rectExplosion(pos.x() - anchoExplosion/2, pos.y() - altoExplosion/2, anchoExplosion, altoExplosion);
     painter.drawPixmap(rectExplosion.toRect(), explosionEscalada);
@@ -496,7 +585,21 @@ void VisualizacionWidget::calcularPosicionCohete()
 
     double y = alturaAPixel(altura);
 
-    double x = width() / 2.0;
+    // Para nivel 3, usar la posición X del cohete; para otros niveles, centrar
+    double x;
+    if(numeroNivel == 3) {
+        // Convertir posición X del cohete (en metros) a píxeles
+        // Asumimos que el ancho del nivel es 2000 metros (aproximadamente)
+        double anchoNivelMetros = 2000.0;
+        double escalaX = width() / anchoNivelMetros;
+        x = (width() / 2.0) + (coheteActual->obtenerPosicionX() * escalaX);
+        
+        // Limitar dentro de los bordes
+        if(x < 25) x = 25;
+        if(x > width() - 25) x = width() - 25;
+    } else {
+        x = width() / 2.0;
+    }
 
     posicionCohete = QPointF(x, y);
 }
@@ -606,7 +709,12 @@ void VisualizacionWidget::cargarSprites()
             }
         }
         
-        QString rutaFondo3 = QDir(rutaSprites).absoluteFilePath("fondo3.png");
+        // Cargar fondo del nivel 3 (luna)
+        QString rutaFondo3 = QDir(rutaSprites).absoluteFilePath("fondonivel3luna.png");
+        if(!QFileInfo::exists(rutaFondo3)) {
+            // Fallback al fondo3.png si no existe fondonivel3luna.png
+            rutaFondo3 = QDir(rutaSprites).absoluteFilePath("fondo3.png");
+        }
         if(QFileInfo::exists(rutaFondo3)) {
             spriteFondo3 = QPixmap(rutaFondo3);
             if(spriteFondo3.isNull()) {
@@ -651,6 +759,35 @@ void VisualizacionWidget::dividirSpriteSheet()
     }
 }
 
+void VisualizacionWidget::dividirSpriteSheetExplosion()
+{
+    framesExplosion.clear();
+    
+    if(spriteExplosion.isNull()) {
+        return;
+    }
+    
+    // El sprite de explosión tiene 3 columnas y 3 filas (9 frames)
+    int numFramesXExp = 3;
+    int numFramesYExp = 3;
+    
+    int anchoSheet = spriteExplosion.width();
+    int altoSheet = spriteExplosion.height();
+    
+    int anchoFrame = anchoSheet / numFramesXExp;
+    int altoFrame = altoSheet / numFramesYExp;
+    
+    for(int fila = 0; fila < numFramesYExp; ++fila) {
+        for(int columna = 0; columna < numFramesXExp; ++columna) {
+            int x = columna * anchoFrame;
+            int y = fila * altoFrame;
+            
+            QPixmap frame = spriteExplosion.copy(x, y, anchoFrame, altoFrame);
+            framesExplosion.append(frame);
+        }
+    }
+}
+
 int VisualizacionWidget::obtenerFrameSegunEmpuje(double empuje, double empujeMaximo) const
 {
     if(empuje <= 0.0 || framesCohete.isEmpty()) {
@@ -666,4 +803,76 @@ int VisualizacionWidget::obtenerFrameSegunEmpuje(double empuje, double empujeMax
     if(frameIndex >= totalFrames) frameIndex = totalFrames - 1;
     
     return frameIndex;
+}
+
+void VisualizacionWidget::cargarSonidos()
+{
+    QDir directorioActual = QDir::current();
+    QDir dirEjecucion = QDir(QCoreApplication::applicationDirPath());
+    
+    QStringList rutasPosibles;
+    
+    rutasPosibles << "../Sonidos"
+                  << "../../Sonidos"
+                  << "../../../Sonidos"
+                  << "Sonidos"
+                  << directorioActual.absolutePath() + "/../Sonidos"
+                  << directorioActual.absolutePath() + "/../../Sonidos"
+                  << directorioActual.absolutePath() + "/../../../Sonidos";
+    
+    rutasPosibles << dirEjecucion.absoluteFilePath("../Sonidos")
+                  << dirEjecucion.absoluteFilePath("../../Sonidos")
+                  << dirEjecucion.absoluteFilePath("../../../Sonidos")
+                  << dirEjecucion.absoluteFilePath("../../../../Sonidos");
+    
+    QString rutaWorkspace = QDir::homePath() + "/OneDrive/Documentos/DesafioFinal/Sonidos";
+    rutasPosibles << rutaWorkspace;
+    
+    QString rutaSonidos;
+    for(const QString& ruta : rutasPosibles) {
+        QFileInfo infoExplosion(ruta + "/explosion (1).mp3");
+        if(infoExplosion.exists() && infoExplosion.isFile()) {
+            rutaSonidos = ruta;
+            break;
+        }
+    }
+    
+    if(!rutaSonidos.isEmpty()) {
+        // Cargar sonido de explosión
+        QString rutaExplosion = QDir(rutaSonidos).absoluteFilePath("explosion (1).mp3");
+        if(QFileInfo::exists(rutaExplosion)) {
+            sonidoExplosion->setSource(QUrl::fromLocalFile(rutaExplosion));
+            audioOutputExplosion->setVolume(0.8f);
+        }
+        
+        // Cargar sonido de arranque
+        QString rutaArranque = QDir(rutaSonidos).absoluteFilePath("arranque cohete.mp3");
+        if(QFileInfo::exists(rutaArranque)) {
+            sonidoArranque->setSource(QUrl::fromLocalFile(rutaArranque));
+            audioOutputArranque->setVolume(0.7f);
+        }
+        
+        // Cargar y reproducir sonido base en loop
+        QString rutaBase = QDir(rutaSonidos).absoluteFilePath("sonidobase.mp3");
+        if(QFileInfo::exists(rutaBase)) {
+            sonidoBase->setSource(QUrl::fromLocalFile(rutaBase));
+            audioOutput->setVolume(0.5f);
+            sonidoBase->setLoops(QMediaPlayer::Infinite); // Reproducir en bucle infinito
+            sonidoBase->play();
+        }
+    }
+}
+
+void VisualizacionWidget::reproducirSonidoArranque()
+{
+    if(sonidoArranque && sonidoArranque->playbackState() != QMediaPlayer::PlayingState) {
+        sonidoArranque->play();
+    }
+}
+
+void VisualizacionWidget::reproducirSonidoExplosion()
+{
+    if(sonidoExplosion && sonidoExplosion->playbackState() != QMediaPlayer::PlayingState) {
+        sonidoExplosion->play();
+    }
 }

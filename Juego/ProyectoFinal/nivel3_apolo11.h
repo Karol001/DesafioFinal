@@ -31,6 +31,9 @@ public:
 
     double obtenerVelocidadAterrizajeMin() const { return velocidadAterrizajeMin; }
     double obtenerVelocidadAterrizajeMax() const { return velocidadAterrizajeMax; }
+    
+    // Verificar si el cohete aterrizó en la zona correcta (centro)
+    bool verificarAterrizajeEnZona(const Cohete* cohete) const;
 };
 
-#endif
+#endif // NIVEL3_APOLO11_H

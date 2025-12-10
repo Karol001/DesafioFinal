@@ -356,8 +356,10 @@ void MainWindow::verificarEstadoJuego()
         widgetVisualizacion->detenerAnimacion();
         mostrarMensajeVictoria();
     } else if(juego->haPerdido()) {
+        // Detener la simulación pero mantener la animación para mostrar la explosión
         timerJuego->stop();
-        widgetVisualizacion->detenerAnimacion();
+        // NO detener la animación aquí para que la explosión se pueda animar
+        // widgetVisualizacion->detenerAnimacion();
         mostrarMensajeDerrota();
     }
 }
@@ -539,4 +541,61 @@ void MainWindow::habilitarControles(bool habilitar)
     ui->btnNivel2->setEnabled(habilitar);
     ui->btnNivel3->setEnabled(habilitar);
     ui->sliderEmpuje->setEnabled(habilitar);
+}
+
+void MainWindow::keyPressEvent(QKeyEvent *event)
+{
+    // Solo procesar teclas cuando el nivel 3 está activo y en ejecución
+    if(juego->obtenerNivelActual() == 3 && juego->estaEnEjecucion() && !juego->estaPausado()) {
+        double velocidadHorizontal = 15.0; // m/s por tecla presionada
+        
+        switch(event->key()) {
+        case Qt::Key_Left:
+            juego->moverCoheteHorizontal(-velocidadHorizontal);
+            event->accept();
+            return;
+        case Qt::Key_Right:
+            juego->moverCoheteHorizontal(velocidadHorizontal);
+            event->accept();
+            return;
+        case Qt::Key_Up:
+            // Aumentar empuje (como alternativa al slider)
+            {
+                double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
+                double nuevoEmpuje = empujeActual + 10000.0;
+                juego->ajustarEmpuje(nuevoEmpuje);
+                ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
+            }
+            event->accept();
+            return;
+        case Qt::Key_Down:
+            // Disminuir empuje
+            {
+                double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
+                double nuevoEmpuje = empujeActual - 10000.0;
+                juego->ajustarEmpuje(nuevoEmpuje);
+                ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
+            }
+            event->accept();
+            return;
+        }
+    }
+    
+    QMainWindow::keyPressEvent(event);
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event)
+{
+    // Cuando se suelta una tecla, reducir gradualmente la velocidad horizontal
+    if(juego->obtenerNivelActual() == 3 && juego->estaEnEjecucion() && !juego->estaPausado()) {
+        switch(event->key()) {
+        case Qt::Key_Left:
+        case Qt::Key_Right:
+            // La velocidad horizontal se reducirá gradualmente en la física
+            event->accept();
+            return;
+        }
+    }
+    
+    QMainWindow::keyReleaseEvent(event);
 }

@@ -5,6 +5,9 @@
 #include <QPainter>
 #include <QTimer>
 #include <QPixmap>
+#include <QSoundEffect>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 #include "Cohete.h"
 #include "Nivel.h"
 
@@ -47,12 +50,27 @@ private:
     QPixmap spriteFondo;
     QPixmap spriteFondo2;  // Fondo para nivel 2
     QPixmap spriteFondo3;  // Fondo para nivel 3
-    QPixmap spriteExplosion;  // Sprite de explosión
+    QPixmap spriteExplosion;  // Sprite sheet de explosión
     QVector<QPixmap> framesCohete;  // Frames individuales del sprite sheet
+    QVector<QPixmap> framesExplosion;  // Frames de explosión (9 frames 3x3)
     bool spritesCargados;
     int numFramesX;  
     int numFramesY;  
-    bool mostrarExplosion;  
+    bool mostrarExplosion;
+    int frameExplosionActual;  // Frame actual de la explosión
+    bool explosionCompletada;  // Si la explosión ya terminó de reproducirse
+    
+    // Sonidos
+    QMediaPlayer* sonidoExplosion;
+    QMediaPlayer* sonidoArranque;
+    QMediaPlayer* sonidoBase;
+    QAudioOutput* audioOutput;
+    QAudioOutput* audioOutputExplosion;
+    QAudioOutput* audioOutputArranque;
+    bool sonidoArranqueReproducido;
+    void cargarSonidos();
+    void reproducirSonidoArranque();
+    void reproducirSonidoExplosion();  
 
     // Métodos de dibujo
     void dibujarFondo(QPainter& painter);
@@ -65,13 +83,15 @@ private:
     void dibujarLineaObjetivo(QPainter& painter);
     void dibujarMarcadoresAltura(QPainter& painter);
     void dibujarLuna(QPainter& painter); 
-    void dibujarExplosion(QPainter& painter); 
+    void dibujarExplosion(QPainter& painter);
+    void dibujarAreaAterrizaje(QPainter& painter); 
 
     void calcularPosicionCohete();
     void calcularEscalaAltura();
     double alturaAPixel(double altura) const;
     void cargarSprites();
     void dividirSpriteSheet();
+    void dividirSpriteSheetExplosion();
     int obtenerFrameSegunEmpuje(double empuje, double empujeMaximo) const;
 
     void dibujarParticulas(QPainter& painter);

@@ -54,6 +54,7 @@ public:
     void establecerVelocidadInicial(double velocidad);
     void establecerAlturaInicial(double altura);
     void iniciarSimulacion();
+    void moverCoheteHorizontal(double deltaX);  // Para nivel 3 - control de teclado
 
     bool estaEnEjecucion() const;
     bool estaPausado() const;

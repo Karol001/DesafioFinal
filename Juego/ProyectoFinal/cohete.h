@@ -5,6 +5,8 @@ class Cohete {
 private:
     double velocidad;
     double altura;
+    double posicionX;  // Posición horizontal para nivel 3
+    double velocidadX; // Velocidad horizontal para nivel 3
     double combustible;
 
     double combustibleMaximo;
@@ -26,6 +28,8 @@ public:
 
     double obtenerVelocidad() const;
     double obtenerAltura() const;
+    double obtenerPosicionX() const;
+    double obtenerVelocidadX() const;
     double obtenerCombustible() const;
     double obtenerCombustibleMaximo() const;
     double obtenerPorcentajeCombustible() const;
@@ -37,6 +41,9 @@ public:
 
     void establecerVelocidad(double vel);
     void establecerAltura(double alt);
+    void establecerPosicionX(double x);
+    void establecerVelocidadX(double vx);
+    void ajustarVelocidadX(double deltaVx);
     void establecerCombustible(double comb);
     void establecerMasa(double m);
     void establecerTripulado(bool trip);
