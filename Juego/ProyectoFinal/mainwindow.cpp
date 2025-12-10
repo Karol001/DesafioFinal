@@ -385,10 +385,12 @@ void MainWindow::mostrarMensajeVictoria()
     msgBox.setText(QString("🎉 ¡Misión completada con éxito!\n\n"
                            "Nivel: %1\n"
                            "Tiempo: %2 segundos\n"
-                           "Combustible restante: %3%")
+                           "Combustible restante: %3%\n"
+                           "Velocidad final: %4 m/s")
                        .arg(juego->obtenerNivelActual())
                        .arg(juego->obtenerTiempoSimulacion(), 0, 'f', 1)
-                       .arg(juego->obtenerCohete()->obtenerPorcentajeCombustible(), 0, 'f', 1));
+                       .arg(juego->obtenerCohete()->obtenerPorcentajeCombustible(), 0, 'f', 1)
+                       .arg(juego->obtenerCohete()->obtenerVelocidad(), 0, 'f', 1));
 
     msgBox.setStyleSheet(
         "QMessageBox { background-color: #1a1a2e; } "
@@ -411,9 +413,9 @@ void MainWindow::mostrarMensajeVictoria()
 
             switch(siguienteNivel) {
             case 2:
-                // Iniciar nivel 2 manteniendo la velocidad del nivel 1
+                // Iniciar nivel 2 heredando velocidad y combustible del nivel 1
                 juego->iniciarNivelDesdeVictoria(2);
-                
+
                 ui->labelNombreNivel->setText("VOSTOK 1 - 1961");
                 ui->labelDescripcionNivel->setText(
                     QString::fromStdString(juego->obtenerNivel()->obtenerDescripcion())
@@ -425,15 +427,43 @@ void MainWindow::mostrarMensajeVictoria()
                 ui->spinVelocidadInicial->setEnabled(false);
                 ui->labelVelocidadInicial->setEnabled(false);
 
-                agregarMensajeHAL(QString("HAL-69: Nivel 2 iniciado. Velocidad actual: %1 m/s. Mantén velocidad entre 2000-9000 m/s.")
-                                  .arg(juego->obtenerCohete()->obtenerVelocidad(), 0, 'f', 1));
+                agregarMensajeHAL(QString("HAL-69: Nivel 2 iniciado.\n"
+                                          "Velocidad heredada: %1 m/s\n"
+                                          "Combustible heredado: %2 kg\n"
+                                          "Objetivo: Mantén velocidad entre 2000-9000 m/s.")
+                                      .arg(juego->obtenerCohete()->obtenerVelocidad(), 0, 'f', 1)
+                                      .arg(juego->obtenerCohete()->obtenerCombustible(), 0, 'f', 1));
 
                 ui->btnIniciar->setEnabled(true);
                 ui->btnReiniciar->setEnabled(true);
                 actualizarTelemetria();
                 break;
+
             case 3:
-                on_btnNivel3_clicked();
+                // Iniciar nivel 3 heredando solo combustible del nivel 2
+                juego->iniciarNivelDesdeVictoria(3);
+
+                ui->labelNombreNivel->setText("APOLO 11 - 1969");
+                ui->labelDescripcionNivel->setText(
+                    QString::fromStdString(juego->obtenerNivel()->obtenerDescripcion())
+                    );
+
+                widgetVisualizacion->actualizarNivel(juego->obtenerNivel(), 3);
+                widgetVisualizacion->actualizarCohete(juego->obtenerCohete());
+
+                ui->spinVelocidadInicial->setEnabled(false);
+                ui->labelVelocidadInicial->setEnabled(false);
+
+                agregarMensajeHAL(QString("HAL-69: Nivel 3 iniciado - Alunizaje.\n"
+                                          "Combustible heredado: %1 kg\n"
+                                          "Altura inicial: 15 km\n"
+                                          "Velocidad inicial: 0 m/s (descenso)\n"
+                                          "Objetivo: Aterrizar con velocidad ≤ 5 m/s.")
+                                      .arg(juego->obtenerCohete()->obtenerCombustible(), 0, 'f', 1));
+
+                ui->btnIniciar->setEnabled(true);
+                ui->btnReiniciar->setEnabled(true);
+                actualizarTelemetria();
                 break;
             }
         }

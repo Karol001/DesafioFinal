@@ -3,12 +3,13 @@
 
 Nivel3_Apolo11::Nivel3_Apolo11()
     : Nivel("Apolo 11 - 1969",
-            0.0,
-            100.0,
-            300.0,
+            0.0,   // altura objetivo (tocando superficie)
+            100.0, // velocidad máxima (no muy relevante aquí)
+            0.0,   // velocidad mínima de aterrizaje (base)
             1.62,
             0.0),
-    velocidadAterrizajeSegura(300.0),
+    velocidadAterrizajeMin(0.0),
+    velocidadAterrizajeMax(5.0),
     gravedadLunar(1.62),
     alturaSuperficie(0.0),
     enDescenso(false),
@@ -17,22 +18,27 @@ Nivel3_Apolo11::Nivel3_Apolo11()
 {
 }
 
+
 bool Nivel3_Apolo11::verificarVictoria(Cohete* cohete) {
+    double v = std::abs(cohete->obtenerVelocidad());
+
     if (cohete->obtenerAltura() <= alturaSuperficie + 1.0 &&
-        std::abs(cohete->obtenerVelocidad()) <= velocidadAterrizajeSegura &&
+        v >= velocidadAterrizajeMin &&
+        v <= velocidadAterrizajeMax &&
         !cohete->estaDanado())
     {
         return true;
     }
 
     if (cohete->obtenerAltura() <= alturaSuperficie &&
-        std::abs(cohete->obtenerVelocidad()) > velocidadAterrizajeSegura)
+        (v < velocidadAterrizajeMin || v > velocidadAterrizajeMax))
     {
         cohete->marcarDanado();
     }
 
     return false;
 }
+
 
 void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
     if (deltaTime <= 0.0) return;
@@ -51,7 +57,8 @@ void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
             cohete->obtenerVelocidad() + aceleracion * deltaTime;
         cohete->establecerVelocidad(nuevaVelocidad);
 
-        double consumo = (cohete->obtenerEmpuje() / 9000.0) * deltaTime;
+        const double FACTOR_CONSUMO_APOLO = 4000.0;
+        double consumo = (cohete->obtenerEmpuje() / FACTOR_CONSUMO_APOLO) * deltaTime;
         cohete->consumirCombustible(consumo);
     }
 
@@ -60,7 +67,9 @@ void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
     cohete->actualizarEstado(deltaTime);
 
     if (cohete->obtenerAltura() <= alturaSuperficie) {
-        if (std::abs(cohete->obtenerVelocidad()) > velocidadAterrizajeSegura) {
+        double vImpacto = std::abs(cohete->obtenerVelocidad());
+
+        if (vImpacto < velocidadAterrizajeMin || vImpacto > velocidadAterrizajeMax) {
             cohete->marcarDanado();
         }
 
@@ -79,10 +88,13 @@ std::string Nivel3_Apolo11::obtenerObjetivo() const {
 }
 
 bool Nivel3_Apolo11::verificarAterrizaje(Cohete* cohete) const {
+    double v = std::abs(cohete->obtenerVelocidad());
     return (cohete->obtenerAltura() <= alturaSuperficie + 1.0 &&
-            std::abs(cohete->obtenerVelocidad()) <= velocidadAterrizajeSegura &&
+            v >= velocidadAterrizajeMin &&
+            v <= velocidadAterrizajeMax &&
             !cohete->estaDanado());
 }
+
 
 void Nivel3_Apolo11::iniciarDescenso() {
     enDescenso = false;

@@ -244,46 +244,48 @@ void VisualizacionWidget::dibujarCohete(QPainter& painter)
 
     painter.save();
 
-    if((numeroNivel == 1 || numeroNivel == 2) && spritesCargados && !framesCohete.isEmpty()) {
+    // Usar sprites para todos los niveles (1, 2 y 3)
+    if(spritesCargados && !framesCohete.isEmpty()) {
         int frameIndex = 0;
-        
+
         if(numeroNivel == 1) {
             double altura = coheteActual->obtenerAltura();
             double velocidad = coheteActual->obtenerVelocidad();
             double empuje = coheteActual->obtenerEmpuje();
-            
+
             if(empuje <= 0.0) {
                 frameIndex = 0;
             } else {
                 double alturaMaxima = 150000.0;
                 double velocidadMaxima = 10000.0;
-                
+
                 double porcentajeAltura = std::min(1.0, altura / alturaMaxima);
                 double porcentajeVelocidad = std::min(1.0, velocidad / velocidadMaxima);
-                
+
                 double progreso = (porcentajeAltura * 0.4 + porcentajeVelocidad * 0.6);
-                
+
                 int totalFrames = framesCohete.size();
                 frameIndex = 1 + static_cast<int>(progreso * (totalFrames - 2));
-                
+
                 if(frameIndex < 1) frameIndex = 1;
                 if(frameIndex >= totalFrames) frameIndex = totalFrames - 1;
             }
-        } else {
+        } else if(numeroNivel == 2 || numeroNivel == 3) {
+            // Usar empuje para determinar el frame tanto en nivel 2 como en nivel 3
             double empuje = coheteActual->obtenerEmpuje();
             double empujeMaximo = 500000.0;
             frameIndex = obtenerFrameSegunEmpuje(empuje, empujeMaximo);
         }
-        
+
         if(frameIndex < 0) frameIndex = 0;
         if(frameIndex >= framesCohete.size()) frameIndex = framesCohete.size() - 1;
-        
+
         QPixmap frameActual = framesCohete[frameIndex];
-        
+
         int anchoCohete = 50;
         int altoCohete = 80;
         QPixmap coheteEscalado = frameActual.scaled(anchoCohete, altoCohete, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        
+
         QRectF rectCohete(pos.x() - anchoCohete/2, pos.y() - altoCohete/2, anchoCohete, altoCohete);
         painter.drawPixmap(rectCohete.toRect(), coheteEscalado);
 
@@ -293,6 +295,7 @@ void VisualizacionWidget::dibujarCohete(QPainter& painter)
             painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
         }
     } else {
+        // Fallback: dibujo vectorial si no hay sprites
         QColor colorCohete = coheteActual->estaDanado() ?
                                  QColor(200, 50, 50) : QColor(220, 220, 220);
 
@@ -329,6 +332,7 @@ void VisualizacionWidget::dibujarCohete(QPainter& painter)
         }
     }
 
+    // Indicador de empuje (barra lateral)
     if(coheteActual->obtenerEmpuje() > 0) {
         double porcentajeEmpuje = coheteActual->obtenerEmpuje() / 500000.0;
         int alturaBarra = static_cast<int>(40 * porcentajeEmpuje);

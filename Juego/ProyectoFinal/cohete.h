@@ -53,6 +53,7 @@ public:
 
     bool tieneCombustible() const;
     bool estaEnAtmosfera() const;
+
 };
 
 #endif // COHETE_H

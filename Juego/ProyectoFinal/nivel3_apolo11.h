@@ -5,7 +5,8 @@
 
 class Nivel3_Apolo11 : public Nivel {
 private:
-    double velocidadAterrizajeSegura;
+    double velocidadAterrizajeMin;
+    double velocidadAterrizajeMax;
     double gravedadLunar;
     double alturaSuperficie;
     bool   enDescenso;
@@ -27,6 +28,9 @@ public:
     double obtenerTiempoTranscurrido() const { return tiempoTranscurrido; }
     std::string obtenerFaseDescenso(Cohete* cohete) const;
     double obtenerVelocidadIdeal(double altura) const;
+
+    double obtenerVelocidadAterrizajeMin() const { return velocidadAterrizajeMin; }
+    double obtenerVelocidadAterrizajeMax() const { return velocidadAterrizajeMax; }
 };
 
 #endif

@@ -29,7 +29,6 @@ void Juego::iniciarNivel(int numeroNivel) {
     inicializarNivel(numeroNivel);
     configurarCoheteParaNivel(numeroNivel);
 
-    // NO establecer enEjecucion aquí - solo se establece cuando se inicia la simulación
     enEjecucion = false;
     pausado = false;
 
@@ -37,19 +36,41 @@ void Juego::iniciarNivel(int numeroNivel) {
 }
 
 void Juego::iniciarNivelDesdeVictoria(int numeroNivel) {
-    // Iniciar nivel manteniendo el estado del cohete (velocidad, altura, combustible)
-    // Esto se usa cuando se pasa de un nivel al siguiente
+    // Guardar el estado actual del cohete antes de cambiar de nivel
+    double velocidadActual = cohete->obtenerVelocidad();
+    double combustibleActual = cohete->obtenerCombustible();
+
     limpiarEstadoAnterior();
     nivelNumero = numeroNivel;
 
     inicializarNivel(numeroNivel);
-    
-    // NO llamar a configurarCoheteParaNivel porque queremos mantener el estado
-    // Solo reconfigurar para el nuevo nivel sin resetear velocidad/altura
+
+    // Configurar el cohete para el nuevo nivel (esto resetea masa, combustible máximo, etc.)
     cohete->configurarParaNivel(numeroNivel);
-    // Mantener la velocidad y altura actuales del cohete
-    // La altura y velocidad se mantienen automáticamente porque no las reseteamos
-    
+
+    // Aplicar la herencia de estados según el nivel
+    if (numeroNivel == 2) {
+        // Del nivel 1 al 2: heredar velocidad y combustible
+        cohete->establecerVelocidad(velocidadActual);
+        cohete->establecerCombustible(combustibleActual);
+        cohete->establecerAltura(0.0); // Reiniciar altura
+
+        std::cout << "\n=== Transición Nivel 1 -> Nivel 2 ===\n";
+        std::cout << "Velocidad heredada: " << velocidadActual << " m/s\n";
+        std::cout << "Combustible heredado: " << combustibleActual << " kg\n\n";
+
+    } else if (numeroNivel == 3) {
+        // Del nivel 2 al 3: heredar solo combustible, velocidad en 0
+        cohete->establecerVelocidad(0.0); // Reiniciar velocidad para descenso
+        cohete->establecerCombustible(combustibleActual);
+        cohete->establecerAltura(15000.0); // Altura inicial del nivel 3
+
+        std::cout << "\n=== Transición Nivel 2 -> Nivel 3 ===\n";
+        std::cout << "Velocidad inicial: 0.0 m/s (descenso)\n";
+        std::cout << "Combustible heredado: " << combustibleActual << " kg\n";
+        std::cout << "Altura inicial: 15000 m\n\n";
+    }
+
     // NO establecer enEjecucion aquí - solo se establece cuando se inicia la simulación
     enEjecucion = false;
     pausado = false;
@@ -79,20 +100,27 @@ void Juego::inicializarNivel(int numeroNivel) {
 }
 
 void Juego::configurarCoheteParaNivel(int nivel) {
+    // Ajusta masa, tripulación, etc., pero NO combustible.
     cohete->configurarParaNivel(nivel);
+
+    // Aquí SÍ queremos reiniciar completamente el estado del cohete
+    // porque esto se usa cuando el jugador selecciona el nivel desde la UI
+    // (no en la transición automática entre niveles).
+    cohete->reiniciarEstado();
 
     switch (nivel) {
     case 1:
         cohete->establecerAltura(0.0);
-        // La velocidad inicial se establecerá desde la UI
-        // cohete->establecerVelocidadInicial(0.0);
+        // La velocidad inicial se establecerá desde la UI.
         cohete->ajustarEmpuje(0.0);
         break;
+
     case 2:
         cohete->establecerAltura(0.0);
         cohete->establecerVelocidadInicial(0.0);
         cohete->ajustarEmpuje(0.0);
         break;
+
     case 3:
         cohete->establecerAltura(15000.0);
         cohete->establecerVelocidadInicial(0.0);
@@ -100,6 +128,7 @@ void Juego::configurarCoheteParaNivel(int nivel) {
         break;
     }
 }
+
 
 void Juego::actualizar() {
     if (!enEjecucion || pausado || victoria || derrota) {
@@ -153,14 +182,23 @@ void Juego::manejarColisionSuelo() {
         double velocidadImpacto = cohete->obtenerVelocidad();
 
         if (nivelNumero == 3) {
-            if (std::abs(velocidadImpacto) > 5.0) {
-                cohete->marcarDanado();
+            // Usar el rango definido en Nivel3_Apolo11
+            auto* apolo = dynamic_cast<Nivel3_Apolo11*>(nivelActual.get());
+            double vImpactoAbs = std::abs(velocidadImpacto);
+
+            if (apolo) {
+                double vMin = apolo->obtenerVelocidadAterrizajeMin();
+                double vMax = apolo->obtenerVelocidadAterrizajeMax();
+
+                if (vImpactoAbs < vMin || vImpactoAbs > vMax) {
+                    cohete->marcarDanado();
+                }
+            } else {
+                if (vImpactoAbs > 5.0) {
+                    cohete->marcarDanado();
+                }
             }
-            cohete->establecerAltura(0.0);
-            cohete->establecerVelocidad(0.0);
-        }
-        else if (velocidadImpacto < -300.0) {
-            cohete->marcarDanado();
+
             cohete->establecerAltura(0.0);
             cohete->establecerVelocidad(0.0);
         }

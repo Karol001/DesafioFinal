@@ -21,7 +21,8 @@ void Nivel1_Sputnik::aplicarFisica(Cohete* cohete, double deltaTime) {
         double nuevaVelocidad = cohete->obtenerVelocidad() + aceleracion * deltaTime;
         cohete->establecerVelocidad(nuevaVelocidad);
 
-        double consumo = (cohete->obtenerEmpuje() / 10000.0) * deltaTime;
+        const double FACTOR_CONSUMO_SPUTNIK = 3000.0;
+        double consumo = (cohete->obtenerEmpuje() / FACTOR_CONSUMO_SPUTNIK) * deltaTime;
         cohete->consumirCombustible(consumo);
     }
 

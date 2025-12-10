@@ -26,7 +26,8 @@ void Nivel2_Vostok::aplicarFisica(Cohete* cohete, double deltaTime) {
         double a = cohete->obtenerEmpuje() / cohete->obtenerMasa();
         cohete->establecerVelocidad(cohete->obtenerVelocidad() + a * deltaTime);
 
-        double consumo = (cohete->obtenerEmpuje() / 10000.0) * deltaTime;
+        const double FACTOR_CONSUMO_VOSTOK = 3000.0;
+        double consumo = (cohete->obtenerEmpuje() / FACTOR_CONSUMO_VOSTOK) * deltaTime;
         cohete->consumirCombustible(consumo);
     }
 

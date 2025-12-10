@@ -82,10 +82,6 @@ void Cohete::establecerAltura(double alt) {
     altura = std::max(0.0, alt);
 }
 
-void Cohete::establecerCombustible(double comb) {
-    combustible = std::clamp(comb, 0.0, combustibleMaximo);
-    calcularMasaActual();
-}
 
 void Cohete::establecerMasa(double m) {
     masaSeca = std::max(100.0, m);
@@ -152,38 +148,36 @@ void Cohete::reiniciarEstado() {
 }
 
 void Cohete::configurarParaNivel(int nivel) {
+    // Solo cambiamos características estructurales del cohete.
+    // NO tocamos combustible ni combustibleMaximo para que
+    // el tanque sea el mismo en todos los niveles.
+
     switch (nivel) {
     case 1:
         masaSeca = 3000.0;
-        combustibleMaximo = 8000.0;
         tripulado = false;
         break;
 
     case 2:
         masaSeca = 4000.0;
-        combustibleMaximo = 12000.0;
         tripulado = true;
         break;
 
     case 3:
         masaSeca = 15000.0;
-        combustibleMaximo = 8000.0;
-        combustible = combustibleMaximo;
-         calcularMasaActual();
         tripulado = true;
         break;
 
     default:
         masaSeca = 3000.0;
-        combustibleMaximo = 8000.0;
         tripulado = false;
         break;
     }
 
-    combustible = combustibleMaximo;
+    // Recalculamos la masa total con el combustible actual.
     calcularMasaActual();
-    reiniciarEstado();
 }
+
 
 void Cohete::marcarDanado() {
     danado = true;
@@ -195,4 +189,10 @@ bool Cohete::tieneCombustible() const {
 
 bool Cohete::estaEnAtmosfera() const {
     return altura < 100000.0;
+}
+
+void Cohete::establecerCombustible(double comb) {
+    // Asegurar que el combustible no exceda el máximo del nivel actual
+    combustible = std::clamp(comb, 0.0, combustibleMaximo);
+    calcularMasaActual();
 }
