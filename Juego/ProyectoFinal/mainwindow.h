@@ -58,6 +58,10 @@ private:
 
     // Control de teclado para nivel 3
     QSet<int> teclasPresionadas;
+    
+    // Sistema de progreso de niveles
+    bool nivel1Completado;
+    bool nivel2Completado;
 
     // Métodos auxiliares
     void inicializarJuego();
@@ -69,6 +73,8 @@ private:
     void mostrarMensajeVictoria();
     void mostrarMensajeDerrota();
     void habilitarControles(bool habilitar);
+    void actualizarEstadoBotonesNivel();
+    void verificarYBloquearNivel(int nivel);
 };
 
 #endif // MAINWINDOW_H

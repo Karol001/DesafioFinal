@@ -144,11 +144,11 @@ double Nivel3_Apolo11::obtenerVelocidadIdeal(double altura) const {
 }
 
 bool Nivel3_Apolo11::verificarAterrizajeEnZona(const Cohete* cohete) const {
-    // El área de aterrizaje es el 25% central de la pantalla
+    // El área de aterrizaje es muy pequeña, apenas para que quepa el cohete
     // En coordenadas del cohete (metros), asumiendo que el ancho total es 2000m
-    // El centro sería de -250m a +250m (25% del total de 2000m = 500m, mitad = 250m)
+    // El cohete tiene aproximadamente 10-15 metros de ancho, así que hacemos la zona de 50m (muy pequeña)
     double posicionX = cohete->obtenerPosicionX();
-    double rangoAterrizaje = 250.0;  // 25% del ancho total de 2000m
+    double rangoAterrizaje = 25.0;  // Solo 25 metros a cada lado del centro (50m total, muy pequeño)
     
     return (posicionX >= -rangoAterrizaje && posicionX <= rangoAterrizaje);
 }

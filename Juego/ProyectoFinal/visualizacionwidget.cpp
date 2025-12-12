@@ -530,8 +530,14 @@ void VisualizacionWidget::dibujarAreaAterrizaje(QPainter& painter)
 {
     int alturaSuperficie = height() - 50;
     
-    // Área de aterrizaje en la mitad de la pantalla (cuarto central)
-    double anchoArea = width() * 0.25;  // 25% del ancho
+    // Área de aterrizaje muy pequeña, apenas para que quepa el cohete
+    // El ancho total del nivel es 2000m, y la zona es de 50m (25m a cada lado)
+    // Esto es aproximadamente 2.5% del ancho de la pantalla
+    double anchoNivelMetros = 2000.0;
+    double anchoAreaMetros = 50.0;  // Solo 50 metros de ancho (muy pequeño)
+    double escalaX = width() / anchoNivelMetros;
+    double anchoArea = anchoAreaMetros * escalaX;  // Convertir a píxeles
+    
     double xInicio = (width() / 2.0) - (anchoArea / 2.0);
     double xFin = xInicio + anchoArea;
     
@@ -542,16 +548,16 @@ void VisualizacionWidget::dibujarAreaAterrizaje(QPainter& painter)
     QRectF areaAterrizaje(xInicio, alturaSuperficie - 20, anchoArea, 20);
     painter.drawRect(areaAterrizaje);
     
-    // Dibujar líneas verticales en los bordes
-    painter.setPen(QPen(QColor(0, 255, 0, 200), 2));
-    painter.drawLine(QPointF(xInicio, alturaSuperficie - 40), QPointF(xInicio, alturaSuperficie));
-    painter.drawLine(QPointF(xFin, alturaSuperficie - 40), QPointF(xFin, alturaSuperficie));
+    // Dibujar líneas verticales en los bordes (más visibles)
+    painter.setPen(QPen(QColor(0, 255, 0, 255), 3));
+    painter.drawLine(QPointF(xInicio, alturaSuperficie - 50), QPointF(xInicio, alturaSuperficie));
+    painter.drawLine(QPointF(xFin, alturaSuperficie - 50), QPointF(xFin, alturaSuperficie));
     
     // Etiqueta
     painter.setPen(QColor(0, 255, 0));
-    painter.setFont(QFont("Arial", 12, QFont::Bold));
+    painter.setFont(QFont("Arial", 10, QFont::Bold));
     QString texto = "ZONA DE ATERRIZAJE";
-    QRectF rectTexto(xInicio, alturaSuperficie - 60, anchoArea, 20);
+    QRectF rectTexto(xInicio - 100, alturaSuperficie - 70, anchoArea + 200, 20);
     painter.drawText(rectTexto, Qt::AlignCenter, texto);
 }
 

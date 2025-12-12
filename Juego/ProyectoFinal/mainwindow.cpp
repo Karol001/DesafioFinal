@@ -9,6 +9,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , nivel1Completado(false)
+    , nivel2Completado(false)
 {
     ui->setupUi(this);
 
@@ -31,8 +33,11 @@ MainWindow::MainWindow(QWidget *parent)
     ui->spinVelocidadInicial->setEnabled(false);
     ui->labelVelocidadInicial->setEnabled(false);
 
+    // Inicializar estado de niveles (solo nivel 1 disponible al inicio)
+    actualizarEstadoBotonesNivel();
+
     // Mensaje inicial de HAL
-    agregarMensajeHAL("HAL-69: Sistemas iniciados. Selecciona un nivel para comenzar.");
+    agregarMensajeHAL("HAL-69: Sistemas iniciados. Completa el Nivel 1 para desbloquear más niveles.");
     
     // Asegurar que la ventana principal pueda recibir eventos de teclado
     setFocusPolicy(Qt::StrongFocus);
@@ -99,6 +104,14 @@ void MainWindow::on_btnNivel1_clicked()
 
 void MainWindow::on_btnNivel2_clicked()
 {
+    // Verificar si el nivel 1 ha sido completado
+    if(!nivel1Completado) {
+        QMessageBox::warning(this, "Nivel Bloqueado", 
+            "Debes completar el Nivel 1 antes de poder jugar el Nivel 2.\n\n"
+            "¡Completa el Nivel 1 para desbloquear más desafíos!");
+        return;
+    }
+    
     juego->iniciarNivel(2);
 
     ui->labelNombreNivel->setText("VOSTOK 1 - 1961");
@@ -122,6 +135,14 @@ void MainWindow::on_btnNivel2_clicked()
 
 void MainWindow::on_btnNivel3_clicked()
 {
+    // Verificar si el nivel 2 ha sido completado
+    if(!nivel2Completado) {
+        QMessageBox::warning(this, "Nivel Bloqueado", 
+            "Debes completar el Nivel 2 antes de poder jugar el Nivel 3.\n\n"
+            "¡Completa el Nivel 2 para desbloquear el desafío final!");
+        return;
+    }
+    
     juego->iniciarNivel(3);
 
     ui->labelNombreNivel->setText("APOLO 11 - 1969");
@@ -419,6 +440,17 @@ void MainWindow::verificarEstadoJuego()
 
 void MainWindow::mostrarMensajeVictoria()
 {
+    // Marcar el nivel como completado
+    int nivelActual = juego->obtenerNivelActual();
+    if(nivelActual == 1) {
+        nivel1Completado = true;
+    } else if(nivelActual == 2) {
+        nivel2Completado = true;
+    }
+    
+    // Actualizar el estado de los botones
+    actualizarEstadoBotonesNivel();
+    
     ui->labelEstado->setText("🏆 ¡VICTORIA!");
     ui->labelEstado->setStyleSheet(
         "font-size: 14px; font-weight: bold; color: #00ff00; "
@@ -426,7 +458,7 @@ void MainWindow::mostrarMensajeVictoria()
         );
 
     QString mensajeHAL = QString("HAL-69: ¡MISIÓN EXITOSA! Nivel %1 completado en %2 segundos.")
-                             .arg(juego->obtenerNivelActual())
+                             .arg(nivelActual)
                              .arg(juego->obtenerTiempoSimulacion(), 0, 'f', 1);
 
     agregarMensajeHAL(mensajeHAL);
@@ -591,9 +623,43 @@ void MainWindow::agregarMensajeHAL(const QString& mensaje)
 void MainWindow::habilitarControles(bool habilitar)
 {
     ui->btnNivel1->setEnabled(habilitar);
-    ui->btnNivel2->setEnabled(habilitar);
-    ui->btnNivel3->setEnabled(habilitar);
+    // Los niveles 2 y 3 se habilitan según el progreso
+    if(habilitar) {
+        actualizarEstadoBotonesNivel();
+    }
     ui->sliderEmpuje->setEnabled(habilitar);
+}
+
+void MainWindow::actualizarEstadoBotonesNivel()
+{
+    // Nivel 1 siempre está disponible
+    ui->btnNivel1->setEnabled(true);
+    
+    // Nivel 2 solo disponible si se completó el nivel 1
+    if(nivel1Completado) {
+        ui->btnNivel2->setEnabled(true);
+        // Actualizar el texto del botón para indicar que está desbloqueado
+        ui->btnNivel2->setToolTip("Nivel 2 desbloqueado");
+    } else {
+        ui->btnNivel2->setEnabled(false);
+        ui->btnNivel2->setToolTip("Completa el Nivel 1 para desbloquear este nivel");
+    }
+    
+    // Nivel 3 solo disponible si se completó el nivel 2
+    if(nivel2Completado) {
+        ui->btnNivel3->setEnabled(true);
+        ui->btnNivel3->setToolTip("Nivel 3 desbloqueado");
+    } else {
+        ui->btnNivel3->setEnabled(false);
+        ui->btnNivel3->setToolTip("Completa el Nivel 2 para desbloquear este nivel");
+    }
+}
+
+void MainWindow::verificarYBloquearNivel(int nivel)
+{
+    // Esta función se puede usar para verificar antes de iniciar un nivel
+    // pero ya lo hacemos en los slots de los botones
+    Q_UNUSED(nivel);
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
