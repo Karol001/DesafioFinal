@@ -53,7 +53,8 @@ void Nivel3_Apolo11::aplicarFisica(Cohete* cohete, double deltaTime) {
 
     if (!enDescenso) {
         cohete->establecerAltura(alturaInicial);
-        cohete->establecerVelocidad(0.0);
+        // Dar velocidad inicial hacia abajo para que el descenso sea más rápido y jugable
+        cohete->establecerVelocidad(-50.0); // Velocidad inicial hacia abajo (m/s)
         cohete->establecerPosicionX(0.0);  // Iniciar en el centro
         cohete->establecerVelocidadX(0.0);
         enDescenso = true;

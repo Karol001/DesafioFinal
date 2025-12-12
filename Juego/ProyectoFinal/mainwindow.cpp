@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <QFocusEvent>
 #include <sstream>
 #include <iomanip>
 
@@ -32,6 +33,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Mensaje inicial de HAL
     agregarMensajeHAL("HAL-69: Sistemas iniciados. Selecciona un nivel para comenzar.");
+    
+    // Asegurar que la ventana principal pueda recibir eventos de teclado
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 MainWindow::~MainWindow()
@@ -51,6 +55,9 @@ void MainWindow::inicializarWidgetVisualizacion()
 {
     // Crear el widget de visualización
     widgetVisualizacion = new VisualizacionWidget(this);
+    
+    // Asegurar que el widget no capture el foco del teclado
+    widgetVisualizacion->setFocusPolicy(Qt::NoFocus);
 
     // Reemplazar el widget placeholder con nuestro widget personalizado
     QVBoxLayout* layout = new QVBoxLayout(ui->widgetVisualizacion);
@@ -129,10 +136,15 @@ void MainWindow::on_btnNivel3_clicked()
     ui->spinVelocidadInicial->setEnabled(false);
     ui->labelVelocidadInicial->setEnabled(false);
 
-    agregarMensajeHAL("HAL-69: Nivel 3 cargado. Alunizaje: velocidad máxima 5 m/s.");
+    agregarMensajeHAL("HAL-69: Nivel 3 cargado. Alunizaje: velocidad máxima 5 m/s. Usa las flechas para controlar el cohete.");
 
     ui->btnIniciar->setEnabled(true);
     ui->btnReiniciar->setEnabled(true);
+    
+    // Asegurar que la ventana tenga el foco para recibir eventos de teclado
+    setFocus();
+    activateWindow();
+    
     actualizarTelemetria();
 }
 
@@ -154,7 +166,14 @@ void MainWindow::on_btnIniciar_clicked()
         ui->btnPausar->setEnabled(true);
         ui->btnPausar->setText("⏸ PAUSAR");
 
-        agregarMensajeHAL("HAL-69: Simulación iniciada. ¡Buena suerte!");
+        // Asegurar foco para nivel 3 (control con teclado)
+        if(juego->obtenerNivelActual() == 3) {
+            setFocus();
+            activateWindow();
+            agregarMensajeHAL("HAL-69: Simulación iniciada. Usa las flechas ← → para mover el cohete horizontalmente. ¡Buena suerte!");
+        } else {
+            agregarMensajeHAL("HAL-69: Simulación iniciada. ¡Buena suerte!");
+        }
 
         ui->labelEstado->setText("🟢 EN PROGRESO");
         ui->labelEstado->setStyleSheet(
@@ -259,9 +278,9 @@ void MainWindow::actualizarJuego()
 
     // Procesar movimiento con teclado para nivel 3
     if(juego->obtenerNivelActual() == 3) {
-        // El timer se ejecuta cada 100ms, así que ajustamos la velocidad por frame
-        // para un movimiento más suave y controlable
-        double aceleracionHorizontal = 3.0; // m/s² por frame (ajustado para movimiento suave)
+        // El timer se ejecuta cada 100ms (0.1 segundos)
+        // Aumentamos significativamente la aceleración para que el movimiento sea más notorio
+        double aceleracionHorizontal = 15.0; // m/s² por frame (ajustado para movimiento más rápido y visible)
         
         if(teclasPresionadas.contains(Qt::Key_Left)) {
             juego->moverCoheteHorizontal(-aceleracionHorizontal);
@@ -272,14 +291,14 @@ void MainWindow::actualizarJuego()
         if(teclasPresionadas.contains(Qt::Key_Up)) {
             // Aumentar empuje gradualmente
             double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
-            double nuevoEmpuje = empujeActual + 5000.0;
+            double nuevoEmpuje = empujeActual + 10000.0;
             juego->ajustarEmpuje(nuevoEmpuje);
             ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
         }
         if(teclasPresionadas.contains(Qt::Key_Down)) {
             // Disminuir empuje gradualmente
             double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
-            double nuevoEmpuje = empujeActual - 5000.0;
+            double nuevoEmpuje = empujeActual - 10000.0;
             juego->ajustarEmpuje(nuevoEmpuje);
             ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
         }
@@ -615,4 +634,10 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event)
     }
     
     QMainWindow::keyReleaseEvent(event);
+}
+
+void MainWindow::focusInEvent(QFocusEvent *event)
+{
+    QMainWindow::focusInEvent(event);
+    // Asegurar que las teclas presionadas se mantengan cuando la ventana recupera el foco
 }

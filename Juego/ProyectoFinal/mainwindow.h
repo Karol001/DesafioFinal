@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QKeyEvent>
+#include <QFocusEvent>
 #include <QSet>
 #include <memory>
 #include "Juego.h"
@@ -26,6 +27,7 @@ public:
 protected:
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
+    void focusInEvent(QFocusEvent *event) override;
 
 private slots:
     // Slots para los botones de nivel
