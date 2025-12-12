@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QKeyEvent>
+#include <QSet>
 #include <memory>
 #include "Juego.h"
 #include "visualizacionwidget.h"
@@ -52,6 +53,9 @@ private:
 
     // Widget de visualización
     VisualizacionWidget* widgetVisualizacion;
+
+    // Control de teclado para nivel 3
+    QSet<int> teclasPresionadas;
 
     // Métodos auxiliares
     void inicializarJuego();

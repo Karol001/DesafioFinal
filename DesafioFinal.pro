@@ -1,7 +1,5 @@
-TEMPLATE = app
-CONFIG += console c++17
-CONFIG -= app_bundle
-CONFIG -= qt
+TEMPLATE = subdirs
+CONFIG += c++17
 
-SOURCES += \
-        main.cpp
+# Proyecto principal en subcarpeta Juego/ProyectoFinal
+SUBDIRS += Juego/ProyectoFinal

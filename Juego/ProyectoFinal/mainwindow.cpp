@@ -181,6 +181,9 @@ void MainWindow::on_btnPausar_clicked()
         juego->pausar();
         timerJuego->stop();
         widgetVisualizacion->detenerAnimacion();
+        
+        // Limpiar teclas presionadas al pausar
+        teclasPresionadas.clear();
 
         ui->btnPausar->setText("▶ REANUDAR");
         agregarMensajeHAL("HAL-69: Simulación pausada.");
@@ -197,6 +200,9 @@ void MainWindow::on_btnReiniciar_clicked()
 {
     timerJuego->stop();
     widgetVisualizacion->detenerAnimacion();
+    
+    // Limpiar teclas presionadas al reiniciar
+    teclasPresionadas.clear();
 
     juego->reiniciarNivel();
 
@@ -249,6 +255,34 @@ void MainWindow::actualizarJuego()
 {
     if(!juego->estaEnEjecucion() || juego->estaPausado()) {
         return;
+    }
+
+    // Procesar movimiento con teclado para nivel 3
+    if(juego->obtenerNivelActual() == 3) {
+        // El timer se ejecuta cada 100ms, así que ajustamos la velocidad por frame
+        // para un movimiento más suave y controlable
+        double aceleracionHorizontal = 3.0; // m/s² por frame (ajustado para movimiento suave)
+        
+        if(teclasPresionadas.contains(Qt::Key_Left)) {
+            juego->moverCoheteHorizontal(-aceleracionHorizontal);
+        }
+        if(teclasPresionadas.contains(Qt::Key_Right)) {
+            juego->moverCoheteHorizontal(aceleracionHorizontal);
+        }
+        if(teclasPresionadas.contains(Qt::Key_Up)) {
+            // Aumentar empuje gradualmente
+            double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
+            double nuevoEmpuje = empujeActual + 5000.0;
+            juego->ajustarEmpuje(nuevoEmpuje);
+            ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
+        }
+        if(teclasPresionadas.contains(Qt::Key_Down)) {
+            // Disminuir empuje gradualmente
+            double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
+            double nuevoEmpuje = empujeActual - 5000.0;
+            juego->ajustarEmpuje(nuevoEmpuje);
+            ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
+        }
     }
 
     // Actualizar la simulación
@@ -547,35 +581,14 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 {
     // Solo procesar teclas cuando el nivel 3 está activo y en ejecución
     if(juego->obtenerNivelActual() == 3 && juego->estaEnEjecucion() && !juego->estaPausado()) {
-        double velocidadHorizontal = 15.0; // m/s por tecla presionada
+        // Agregar la tecla al conjunto de teclas presionadas
+        teclasPresionadas.insert(event->key());
         
         switch(event->key()) {
         case Qt::Key_Left:
-            juego->moverCoheteHorizontal(-velocidadHorizontal);
-            event->accept();
-            return;
         case Qt::Key_Right:
-            juego->moverCoheteHorizontal(velocidadHorizontal);
-            event->accept();
-            return;
         case Qt::Key_Up:
-            // Aumentar empuje (como alternativa al slider)
-            {
-                double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
-                double nuevoEmpuje = empujeActual + 10000.0;
-                juego->ajustarEmpuje(nuevoEmpuje);
-                ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
-            }
-            event->accept();
-            return;
         case Qt::Key_Down:
-            // Disminuir empuje
-            {
-                double empujeActual = juego->obtenerCohete()->obtenerEmpuje();
-                double nuevoEmpuje = empujeActual - 10000.0;
-                juego->ajustarEmpuje(nuevoEmpuje);
-                ui->sliderEmpuje->setValue(static_cast<int>(nuevoEmpuje));
-            }
             event->accept();
             return;
         }
@@ -586,11 +599,15 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event)
 {
-    // Cuando se suelta una tecla, reducir gradualmente la velocidad horizontal
-    if(juego->obtenerNivelActual() == 3 && juego->estaEnEjecucion() && !juego->estaPausado()) {
+    // Remover la tecla del conjunto cuando se suelta
+    if(juego->obtenerNivelActual() == 3) {
+        teclasPresionadas.remove(event->key());
+        
         switch(event->key()) {
         case Qt::Key_Left:
         case Qt::Key_Right:
+        case Qt::Key_Up:
+        case Qt::Key_Down:
             // La velocidad horizontal se reducirá gradualmente en la física
             event->accept();
             return;
